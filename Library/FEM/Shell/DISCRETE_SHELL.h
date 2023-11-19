@@ -64,6 +64,64 @@ VECTOR<int, 4> Add_Discrete_Shell_3D(
 }
 
 template <class T, int dim = 3>
+VECTOR<int, 4> Add_Discrete_Shell_3D_withSmock(
+    const std::string& filePath,
+    const std::string& filePath_smock_pattern,
+    const VECTOR<T, dim>& trans,
+    const VECTOR<T, dim>& scale,
+    const VECTOR<T, dim>& rotCenter,
+    const VECTOR<T, dim>& rotAxis,
+    T rotAngDeg,
+    MESH_NODE<T, dim>& X, // mid-surface node coordinates
+    MESH_ELEM<dim - 1>& Elem, // the mid-surface triangles
+    std::vector<int>& compNodeRange)
+{
+    MESH_NODE<T, dim> newX;
+    MESH_ELEM<dim - 1> newElem;
+    MESH_NODE<T, dim> smockX;
+    MESH_ELEM<dim - 1> smockElem;
+    MESH_ELEM<dim - 2> smock_pattern;
+    VECTOR<int, 4> counter = Read_TriMesh_Obj(filePath, newX, newElem);
+    Read_TriMesh_Obj_smock(filePath_smock_pattern, smockX, smockElem, smock_pattern);
+    std::cout << "Size of smock pattern: " << smock_pattern.size << std::endl;
+    counter[0] += X.size;
+    counter[2] += X.size;
+    counter[1] += Elem.size;
+    counter[3] += Elem.size;
+
+    T rotAngRad = rotAngDeg / 180 * M_PI;
+    newX.Par_Each([&](int id, auto data){
+        auto &[X] = data;
+        if constexpr (dim == 3) {
+            const Eigen::Matrix3d rotMtr = Eigen::AngleAxis<T>(rotAngRad,
+                Eigen::Vector3d(rotAxis[0], rotAxis[1], rotAxis[2])).toRotationMatrix();
+            Eigen::Vector3d x((X - rotCenter).data);
+            x = x.cwiseProduct(Eigen::Vector3d(scale.data));
+            const Eigen::Vector3d rotx = rotMtr * x;
+            for (int i = 0; i < dim; ++i) {
+                X[i] = rotx[i] + rotCenter[i] + trans[i];
+            }
+        }
+        else {
+            //TODO
+        }
+    });
+    newElem.Par_Each([&](int id, auto data){
+        auto &[elemVInd] = data;
+        for (int i = 0; i < dim; ++i) {
+            elemVInd[i] += X.size;
+        }
+    });
+
+    Append_Attribute(newX, X);
+    Append_Attribute(newElem, Elem);
+
+    compNodeRange.emplace_back(X.size);
+
+    return counter;
+}
+
+template <class T, int dim = 3>
 void Add_Garment_3D(
     const std::string& filePath,
     const VECTOR<T, dim>& trans,
@@ -1087,6 +1145,7 @@ void Export_Discrete_Shell(py::module& m) {
 
     shell_m.def("Add_Garment", &Add_Garment_3D<double>);
     shell_m.def("Add_Shell", &Add_Discrete_Shell_3D<double>);
+    shell_m.def("Add_Shell_withSmock", &Add_Discrete_Shell_3D_withSmock<double>);
     shell_m.def("Make_Rod", &Make_Rod<double, 3>);
     shell_m.def("Make_Rod_Net", &Make_Rod_Net<double, 3>);
     shell_m.def("Add_Discrete_Particles", &Add_Discrete_Particles<double, 3>);
