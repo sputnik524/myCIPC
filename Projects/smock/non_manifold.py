@@ -28,20 +28,11 @@ if __name__ == "__main__":
 
     sim.mu = 0.0
     
+    # sim.add_shell_with_scale_3D_smock("input/smock_box.obj","input/smock_box_pattern.obj", Vector3d(0, 6.0, 8.0), Vector3d(1.0, 1.0, 1.0),\
+    #     Vector3d(0, 0, 0), Vector3d(1, 0, 0), -90)
 
-    sim.add_shell_with_scale_3D("input/sphere1K_0.5.obj", Vector3d(4.5, 0, 3.5), \
-        Vector3d(20.0, 20.0, 20.0),Vector3d(0, 0, 0), Vector3d(0, 0, 0), 0)
-    sim.set_DBC(Vector3d(-0.1, -0.1, -0.1), Vector3d(1.1, 1.1, 1.1), 
-        Vector3d(0, 0, 0), Vector3d(0, 0, 0), Vector3d(0, 1, 0), 0)
-    sim.MDBC_tmin = 1
-    
-    # sim.add_shell_with_scale_3D("input/square21.obj", Vector3d(3.5, -2.51, 3.5), \
-    #     Vector3d(10.0, 10.0, 10.0), Vector3d(0, 0, 0), Vector3d(0, 1, 0), 0)
-    # sim.set_DBC(Vector3d(-0.1, -0.1, -0.1), Vector3d(1.1, 1e-3, 1.1), 
-    #     Vector3d(0, 0, 0), Vector3d(0, 0, 0), Vector3d(0, 1, 0), 0)
-    
-    sim.add_shell_with_scale_3D_smock("input/smock_box.obj","input/smock_box_pattern.obj", Vector3d(0, 6.0, 8.0), Vector3d(1.0, 1.0, 1.0),\
-        Vector3d(0, 0, 0), Vector3d(1, 0, 0), -90)
+    sim.add_shell("input/smock_box_rest.obj", Vector3d(0, 0.0, 0.0), \
+        Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0)
 
     sim.muComp = StdVectorXd([0, 0, sim.mu,  0, 0, sim.mu,  sim.mu, sim.mu, 0.1])
 
@@ -80,5 +71,7 @@ if __name__ == "__main__":
         # split strain limiting
 
     sim.initialize_OIPC(1e-3, 0)
+
+    sim.load_frame_nm("input/smock_box.obj","input/smock_box_pattern.obj")
 
     sim.run()

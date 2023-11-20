@@ -251,6 +251,14 @@ class FEMDiscreteShellBase(SimulationBase):
         self.X = newX
         # self.Elem = newElem
         FEM.Reset_Dirichlet(self.X, self.DBC)
+
+    def load_frame_nm(self, filePath, filePath_smock):
+        newX = Storage.V2dStorage() if self.dim == 2 else Storage.V3dStorage()
+        newElem = Storage.V2iStorage() if self.dim == 2 else Storage.V3iStorage()
+        # MeshIO.Read_TriMesh_Obj(filePath, newX, newElem)
+        FEM.DiscreteShell.reload_Shell_withSmock(filePath, filePath_smock, newX, newElem)
+        self.X = newX
+        self.Elem = newElem
     
     def load_velocity(self, folderPath, lastFrame, h):
         MeshIO.Load_Velocity(folderPath, lastFrame, h, self.nodeAttr)
