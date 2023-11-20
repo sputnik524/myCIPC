@@ -63,6 +63,89 @@ VECTOR<int, 4> Add_Discrete_Shell_3D(
     return counter;
 }
 
+
+template <class T, int dim = 3>
+void non_manifold(MESH_NODE<T, dim>& X, MESH_ELEM<dim - 1>& Elem, MESH_ELEM<dim - 2>& Elem_smock)
+{
+    int convert_nodes = 0;
+    Elem.Each([&](int id, auto data){
+        auto &[elemVInd] = data;
+        for(int i = 0; i < Elem_smock.size; i++){
+            const VECTOR<int, dim-1>& smock_ind = std::get<0>(Elem_smock.Get_Unchecked(i));
+            for(int j = 0; j < dim; j++){
+                if(elemVInd[j] == smock_ind[dim-2]){
+                    elemVInd[j] = smock_ind[0]; // non-manifold with the first node on each smocking line
+                    convert_nodes++;
+                }
+            }
+        }
+    });
+
+     std::cout << "Converted Node number after non-manifold: " << convert_nodes << std::endl;
+
+    // remove the disconnected nodes
+    MESH_NODE<T, dim> rest_X(X.size);
+    X.Each([&](int id, auto data){
+        auto &[pos] = data;
+        bool remove = false;
+        for(int i = 0; i < Elem_smock.size; i++){
+            const VECTOR<int, dim-1>& smock_ind = std::get<0>(Elem_smock.Get_Unchecked(i));
+            if(id == smock_ind[1]){
+                double dist = (pos - std::get<0>(X.Get_Unchecked(smock_ind[0]))).norm();
+                std::cout << "Removing id with Index: " << id << " with norm: " << dist << std::endl;
+                remove |= true;
+            }
+        }
+        if(!remove)
+            rest_X.Append(pos);
+    });
+
+    std::cout << "Node number after non-manifold: " << rest_X.size << std::endl;
+    rest_X.deep_copy_to(X);
+    
+
+    // offset the rest faces
+    int failed_nodes = 0;
+    Elem.Each([&](int id, auto data){
+        auto &[elemVInd] = data;
+        for(int i = 0; i < Elem_smock.size; i++){
+            const VECTOR<int, dim-1>& smock_ind = std::get<0>(Elem_smock.Get_Unchecked(i));
+            for(int j = 0; j < dim; j++){
+                if (elemVInd[j] == smock_ind[dim-2])
+                {
+                    failed_nodes++;
+                    std::cout << "Fail convert for tri i: " << id << std::endl;
+                }
+                else if(elemVInd[j] > smock_ind[dim-2]){
+                    elemVInd[j]--;
+                }
+                
+            }
+        }
+    });
+    std::cout << "Failed Node number after non-manifold: " << failed_nodes << std::endl;
+}
+
+template <int dim = 3>
+void map_smock_pattern(MESH_ELEM<dim - 2>& Elem_smock)
+{
+    int rows_c = 10; // TODO: use default S2 smock pattern with 10*10 resolution and default S4 10-times fine resolution
+    int cols_c = 10;
+    int fine = 10;
+    int rows_f = rows_c * fine + 1;
+    int cols_f = cols_c * fine + 1;
+    int offset = 5 * rows_f + 5; 
+    Elem_smock.Par_Each([&](int id, auto data){
+        auto &[elemVInd] = data;
+        for(int i = 0; i < dim - 1; i++){
+            int i_s = elemVInd[i] / cols_c;
+            int j_s = elemVInd[i] % cols_c;
+            elemVInd[i] = (i_s * fine * rows_f + j_s * fine + offset);
+        }
+        std::cout << "mapping smocking index: " << id << " to " <<  elemVInd[0] << " " << elemVInd[1] << std::endl;
+    });
+}
+
 template <class T, int dim = 3>
 VECTOR<int, 4> Add_Discrete_Shell_3D_withSmock(
     const std::string& filePath,
@@ -83,7 +166,11 @@ VECTOR<int, 4> Add_Discrete_Shell_3D_withSmock(
     MESH_ELEM<dim - 2> smock_pattern;
     VECTOR<int, 4> counter = Read_TriMesh_Obj(filePath, newX, newElem);
     Read_TriMesh_Obj_smock(filePath_smock_pattern, smockX, smockElem, smock_pattern);
+
     std::cout << "Size of smock pattern: " << smock_pattern.size << std::endl;
+    map_smock_pattern<dim>(smock_pattern);
+    non_manifold<T,dim>(newX, newElem, smock_pattern);
+
     counter[0] += X.size;
     counter[2] += X.size;
     counter[1] += Elem.size;
@@ -120,6 +207,7 @@ VECTOR<int, 4> Add_Discrete_Shell_3D_withSmock(
 
     return counter;
 }
+
 
 template <class T, int dim = 3>
 void Add_Garment_3D(
