@@ -31,7 +31,7 @@ if __name__ == "__main__":
     # sim.add_shell_with_scale_3D_smock("input/smock_box.obj","input/smock_box_pattern.obj", Vector3d(0, 6.0, 8.0), Vector3d(1.0, 1.0, 1.0),\
     #     Vector3d(0, 0, 0), Vector3d(1, 0, 0), -90)
 
-    sim.add_shell("input/smock_box_rest.obj", Vector3d(0, 0.0, 0.0), \
+    sim.add_shell_with_scale_3D_smock("input/smock_box.obj","input/smock_box_pattern.obj", Vector3d(0, 0.0, 0.0), Vector3d(1.0, 1.0, 1.0),\
         Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0)
 
     sim.muComp = StdVectorXd([0, 0, sim.mu,  0, 0, sim.mu,  sim.mu, sim.mu, 0.1])
@@ -40,6 +40,7 @@ if __name__ == "__main__":
     sim.frame_dt = 0.04
     sim.frame_num = 100
     sim.withCollision = True
+    sim.gravity = Vector3d(0, 0, 0)
 
     # sim.staticSolve = True
 
@@ -54,7 +55,7 @@ if __name__ == "__main__":
     elif algI == 1:
         # iso, no strain limit
         sim.initialize(sim.cloth_density_iso[clothI], sim.cloth_Ebase_iso[clothI] * membEMult,
-            sim.cloth_nubase_iso[clothI], sim.cloth_thickness_iso[clothI], 0)
+            sim.cloth_nubase_iso[clothI], sim.cloth_thickness_iso[clothI], 0, non_manifold = True, filepath_rest = "input/smock_box_rest.obj")
         sim.bendingStiffMult = bendEMult / membEMult
         sim.kappa_s = Vector2d(0, 0)
     elif algI == 2:
@@ -71,7 +72,5 @@ if __name__ == "__main__":
         # split strain limiting
 
     sim.initialize_OIPC(1e-3, 0)
-
-    sim.load_frame_nm("input/smock_box.obj","input/smock_box_pattern.obj")
 
     sim.run()

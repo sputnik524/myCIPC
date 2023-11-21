@@ -16,8 +16,10 @@ class FEMDiscreteShellBase(SimulationBase):
         super().__init__(precision, dim)
         self.X0 = Storage.V2dStorage() if self.dim == 2 else Storage.V3dStorage()
         self.X = Storage.V2dStorage() if self.dim == 2 else Storage.V3dStorage()
+        self.X_rest = Storage.V2dStorage() if self.dim == 2 else Storage.V3dStorage()
         self.X_stage = Storage.V2dStorage() if self.dim == 2 else Storage.V3dStorage()
         self.Elem = Storage.V2iStorage() if self.dim == 2 else Storage.V3iStorage()
+        self.Elem_rest = Storage.V2iStorage() if self.dim == 2 else Storage.V3iStorage()
         self.segs = StdVectorVector2i()
         self.outputSeg = False
         self.nodeAttr = Storage.V2dV2dV2dSdStorage() if self.dim == 2 else Storage.V3dV3dV3dSdStorage()
@@ -190,7 +192,7 @@ class FEMDiscreteShellBase(SimulationBase):
         MeshIO.Transform_Points(translate, rotCenter, rotAxis, rotDeg, scale, meshCounter, self.X)
         return meshCounter
 
-    def initialize(self, p_density, E, nu, thickness, caseI):
+    def initialize(self, p_density, E, nu, thickness, caseI, non_manifold = False, filepath_rest =None):
         MeshIO.Append_Attribute(self.X, self.X0)
         self.shell_density = p_density
         self.shell_E = E
@@ -199,9 +201,20 @@ class FEMDiscreteShellBase(SimulationBase):
         self.thickness = thickness # later used as offset
         if caseI != 0:
             self.gravity = self.Vec(0, 0) if self.dim == 2 else self.Vec(0, 0, 0)
-        self.dHat2 = FEM.DiscreteShell.Initialize_Shell_Hinge_EIPC(p_density, E, nu, thickness, self.dt, self.dHat2, self.X, self.Elem, self.segs, \
+
+        if non_manifold:
+            print("Init with rest planar mesh!")
+            MeshIO.Read_TriMesh_Obj(filepath_rest, self.X_rest, self.Elem_rest)
+            self.dHat2 = FEM.DiscreteShell.Initialize_Shell_Hinge_EIPC_NM(p_density, E, nu, thickness, self.dt, self.dHat2, self.X, self.Elem, self.segs, \
+            self.edge2tri, self.edgeStencil, self.edgeInfo, self.nodeAttr, self.massMatrix, self.gravity, self.bodyForce, \
+            self.elemAttr, self.elasticity, self.kappa, self.X_rest, self.Elem_rest)
+
+        else:
+            print("Init with load mesh!")
+            self.dHat2 = FEM.DiscreteShell.Initialize_Shell_Hinge_EIPC(p_density, E, nu, thickness, self.dt, self.dHat2, self.X, self.Elem, self.segs, \
             self.edge2tri, self.edgeStencil, self.edgeInfo, self.nodeAttr, self.massMatrix, self.gravity, self.bodyForce, \
             self.elemAttr, self.elasticity, self.kappa)
+        
         if self.flow:
             FEM.Boundary_Dirichlet(self.X, self.Elem, self.DBC) # fix boundary nodes
 
