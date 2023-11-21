@@ -1125,7 +1125,7 @@ T Initialize_Discrete_Shell_Smock(
             const VECTOR<T, dim>& X3 = std::get<0>(X.Get_Unchecked(elemVInd[2]));
             T area = cross(X2 - X1, X3 - X1).length() / 2;
             T vol = area * thickness;
-            elasticityAttr_smock.Append(MATRIX<T, dim - 1>(), vol, 2.0 * lambda, 2.0 * mu); //  make a stiffer smocking constraint
+            elasticityAttr_smock.Append(MATRIX<T, dim - 1>(), vol, lambda, mu); //  make a stiffer smocking constraint
             // areaSum += area;
         });
 
