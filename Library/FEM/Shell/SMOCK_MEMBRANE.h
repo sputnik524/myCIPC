@@ -103,7 +103,6 @@ void Compute_Smock_Membrane_Gradient(
                 MATRIX<T, dim - 1> IB = std::get<FIELDS<MESH_ELEM_ATTR<T, dim>>::IB>(elemAttr.Get_Unchecked(id));
                 IB.invert();
 
-
                 const VECTOR<T, dim> e01 = x2 - x1;
                 const VECTOR<T, dim> e02 = x3 - x1;
                 MATRIX<T, dim - 1> A;
@@ -146,6 +145,7 @@ void Compute_Smock_Membrane_Gradient(
             }
         });
 
+        int degenerated_smock_elems = 0;
         Elem_smock.Join(elasticityAttr_smock).Each([&](int id, auto data) {
             auto &[elemVInd, F, vol, lambda, mu] = data;
             if (!(DBCb[elemVInd[0]] && DBCb[elemVInd[1]] && DBCb[elemVInd[2]])) {
@@ -163,14 +163,16 @@ void Compute_Smock_Membrane_Gradient(
                 A(1, 0) = A(0, 1) = e01.dot(e02);
                 A(1, 1) = e02.length2();
 
-                if(A.determinant() == 0){
-                    std::cout << "Nonivertiable A at smock_index: " << id << std::endl;
-                    std::cout << "with tri_index: " << elemVInd[0] << " " << elemVInd[1] << " " << elemVInd[2] << std::endl;
-                }
-
                 MATRIX<T, dim - 1> temp;
                 if constexpr (useNH) {
-                    MATRIX<T, dim - 1> IA = A; IA.invert();
+                    MATRIX<T, dim - 1> IA = A; 
+                    // if(A.determinant() == 0){
+                    //     std::cout << "Nonivertiable A at smock_index: " << id << std::endl;
+                    //     std::cout << "with tri_index: " << elemVInd[0] << " " << elemVInd[1] << " " << elemVInd[2] << std::endl;
+                    //     degenerated_smock_elems++;
+                    // }
+                    // else
+                    IA.invert();
                     const T lnJ = std::log(A.determinant() * IB.determinant()) / 2;
                     temp = h * h * vol * (mu / 2 * IB + (-mu + lambda * lnJ) / 2 * IA);
                 }
@@ -202,6 +204,7 @@ void Compute_Smock_Membrane_Gradient(
                 }
             }
         });
+        std::cout << "Number of degenerated_smock_elems: " << degenerated_smock_elems << std::endl;
     }
 }
 
@@ -280,6 +283,7 @@ void Compute_Smock_Membrane_Hessian(
             }
         });
 
+        std::cout << "Starting computing hessian elems with elemCount: " << nonDBCElemCount << std::endl;
 
         triplets.resize(triplets.size() + nonDBCElemCount * 81);
         Elem.Join(elasticityAttr).Par_Each([&](int id, auto data) {
@@ -390,8 +394,9 @@ void Compute_Smock_Membrane_Hessian(
             }
         });
 
+        std::cout << "Starting computing hessian smocking elems" << std::endl;
         Elem_smock.Join(elasticityAttr_smock).Par_Each([&](int id, auto data) {
-            id += Elem.size;
+            
             if (tripletStartInd[id] >= 0) {
                 auto &[elemVInd, F, vol, lambda, mu] = data;
                 const VECTOR<T, dim>& x1 = std::get<0>(X.Get_Unchecked(elemVInd[0]));
@@ -490,6 +495,7 @@ void Compute_Smock_Membrane_Hessian(
                     elemVInd[2] * dim + 1,
                     elemVInd[2] * dim + 2
                 };
+                id += Elem.size;
                 for (int i = 0; i < 9; ++i) {
                     int tripletIStart = tripletStartInd[id] + i * 9;
                     for (int j = 0; j < 9; ++j) {

@@ -1062,6 +1062,27 @@ T Initialize_Discrete_Shell_Smock(
                 }
             }
         });
+
+        Elem_smock.Each([&](int id, auto data) {
+            auto &[elemVInd] = data;
+            const VECTOR<T, dim>& X1 = std::get<0>(X.Get_Unchecked(elemVInd[0]));
+            const VECTOR<T, dim>& X2 = std::get<0>(X.Get_Unchecked(elemVInd[1]));
+            const VECTOR<T, dim>& X3 = std::get<0>(X.Get_Unchecked(elemVInd[2]));
+            T& m1 = std::get<FIELDS<MESH_NODE_ATTR<T, dim>>::m>(nodeAttr.Get_Unchecked(elemVInd[0]));
+            T& m2 = std::get<FIELDS<MESH_NODE_ATTR<T, dim>>::m>(nodeAttr.Get_Unchecked(elemVInd[1]));
+            T& m3 = std::get<FIELDS<MESH_NODE_ATTR<T, dim>>::m>(nodeAttr.Get_Unchecked(elemVInd[2]));
+
+            const T massPortion = cross(X2 - X1, X3 - X1).length() / 2 * thickness * rho0 / 3;
+            massPortionMean += massPortion;
+            m1 += massPortion; m2 += massPortion; m3 += massPortion;
+            for (int endI = 0; endI < dim; ++endI) {
+                for (int dimI = 0; dimI < dim; ++dimI) {
+                    triplets.emplace_back(elemVInd[endI] * dim + dimI, elemVInd[endI] * dim + dimI, massPortion);
+                    b[elemVInd[endI] * dim + dimI] += massPortion * gravity[dimI];
+                }
+            }
+        });
+
         if (Elem.size) {
             massPortionMean /= Elem.size;
         }
@@ -1104,7 +1125,7 @@ T Initialize_Discrete_Shell_Smock(
             const VECTOR<T, dim>& X3 = std::get<0>(X.Get_Unchecked(elemVInd[2]));
             T area = cross(X2 - X1, X3 - X1).length() / 2;
             T vol = area * thickness;
-            elasticityAttr_smock.Append(MATRIX<T, dim - 1>(), vol, 10.0 * lambda, 10.0 * mu); //  make a stiffer smocking constraint
+            elasticityAttr_smock.Append(MATRIX<T, dim - 1>(), vol, 2.0 * lambda, 2.0 * mu); //  make a stiffer smocking constraint
             // areaSum += area;
         });
 
