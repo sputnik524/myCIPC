@@ -20,12 +20,15 @@ class FEMDiscreteShellBase(SimulationBase):
         self.X_stage = Storage.V2dStorage() if self.dim == 2 else Storage.V3dStorage()
         self.Elem = Storage.V2iStorage() if self.dim == 2 else Storage.V3iStorage()
         self.Elem_rest = Storage.V2iStorage() if self.dim == 2 else Storage.V3iStorage()
+        self.Elem_smock = Storage.V2iStorage() if self.dim == 2 else Storage.V3iStorage()
         self.segs = StdVectorVector2i()
         self.outputSeg = False
         self.nodeAttr = Storage.V2dV2dV2dSdStorage() if self.dim == 2 else Storage.V3dV3dV3dSdStorage()
         self.massMatrix = CSR_MATRIX_D()
         self.elemAttr = Storage.M2dM2dSdStorage()
+        self.elemAttr_smock = Storage.M2dM2dSdStorage()
         self.elasticity = FIXED_COROTATED_2.Create() #TODO: different material switch
+        self.elasticity_smock = FIXED_COROTATED_2.Create() #TODO: different material switch
         self.DBC = Storage.V3dStorage() if self.dim == 2 else Storage.V4dStorage()
         self.DBCMotion = Storage.V2iV2dV2dV2dSdStorage() if self.dim == 2 else Storage.V2iV3dV3dV3dSdStorage()
         self.gravity = self.Vec(0, -9.81) if self.dim == 2 else self.Vec(0, -9.81, 0)
@@ -140,6 +143,7 @@ class FEMDiscreteShellBase(SimulationBase):
         self.scaleYMultStep = 1
         self.scaleZMultStep = 1
         self.zeroVel = False
+        self.smock = False
 
     def add_shell_3D(self, filePath, translate, rotCenter, rotAxis, rotDeg): # 3D
         return FEM.DiscreteShell.Add_Shell(filePath, translate, Vector3d(1, 1, 1), rotCenter, rotAxis, rotDeg, self.X, self.Elem, self.compNodeRange)
@@ -192,7 +196,7 @@ class FEMDiscreteShellBase(SimulationBase):
         MeshIO.Transform_Points(translate, rotCenter, rotAxis, rotDeg, scale, meshCounter, self.X)
         return meshCounter
 
-    def initialize(self, p_density, E, nu, thickness, caseI, non_manifold = False, filepath_rest =None):
+    def initialize(self, p_density, E, nu, thickness, caseI, smock = False, filepath_smock = None, filepath_smock_pattern = None, non_manifold = False, filepath_rest =None):
         MeshIO.Append_Attribute(self.X, self.X0)
         self.shell_density = p_density
         self.shell_E = E
@@ -209,6 +213,13 @@ class FEMDiscreteShellBase(SimulationBase):
             self.edge2tri, self.edgeStencil, self.edgeInfo, self.nodeAttr, self.massMatrix, self.gravity, self.bodyForce, \
             self.elemAttr, self.elasticity, self.kappa, self.X_rest, self.Elem_rest)
 
+        elif smock:
+            print("Init with smock mode!")
+            FEM.DiscreteShell.Add_Smock_Constraint(filepath_smock, filepath_smock_pattern, self.Elem_smock)
+            self.dHat2 = FEM.DiscreteShell.Initialize_Shell_Hinge_EIPC_Smock(p_density, E, nu, thickness, self.dt, self.dHat2, self.X, self.Elem, self.Elem_smock, self.segs, \
+            self.edge2tri, self.edgeStencil, self.edgeInfo, self.nodeAttr, self.massMatrix, self.gravity, self.bodyForce, \
+            self.elemAttr, self.elemAttr_smock, self.elasticity, self.elasticity_smock, self.kappa)
+        
         else:
             print("Init with load mesh!")
             self.dHat2 = FEM.DiscreteShell.Initialize_Shell_Hinge_EIPC(p_density, E, nu, thickness, self.dt, self.dHat2, self.X, self.Elem, self.segs, \
@@ -289,6 +300,7 @@ class FEMDiscreteShellBase(SimulationBase):
         FEM.Magnify_Body_Force(self.X, DBCRangeMin, DBCRangeMax, magnifyFactor, self.bodyForce)
 
     def advance_one_time_step(self, dt):
+        # breakpoint()
         #TODO: self.tol
         if self.normalFlowMag != 0:
             # FEM.DiscreteShell.Initialize_Shell_Hinge_EIPC(self.shell_density, self.shell_E, self.shell_nu, self.shell_thickness, self.dt, self.dHat2, self.X, self.Elem, self.segs, \
@@ -342,7 +354,21 @@ class FEMDiscreteShellBase(SimulationBase):
                     self.X, self.nodeAttr, self.massMatrix, self.elemAttr, self.elasticity, \
                     self.tet, self.tetAttr, self.tetElasticity, self.rod, self.rodInfo, \
                     self.rodHinge, self.rodHingeInfo, self.discrete_particle, self.output_folder)
+            
+            elif self.smock:
+                print("Doing smocking constraint!")
+                self.PNIterCount = self.PNIterCount + FEM.DiscreteShell.Advance_One_Step_IE_Hinge_EIPC_Smock(self.Elem, self.segs, self.DBC, \
+                    self.edge2tri, self.edgeStencil, self.edgeInfo, \
+                    self.thickness, self.bendingStiffMult, self.fiberStiffMult, self.inextLimit, self.s, self.sHat, self.kappa_s, \
+                    self.bodyForce, self.dt, self.PNTol, self.withCollision, self.dHat2, self.kappa, self.mu, self.epsv2, self.fricIterAmt, \
+                    self.compNodeRange, self.muComp, self.staticSolve, \
+                    self.X, self.nodeAttr, self.massMatrix, self.elemAttr, self.elasticity, \
+                    self.tet, self.tetAttr, self.tetElasticity, self.rod, self.rodInfo, \
+                    self.rodHinge, self.rodHingeInfo, self.stitchInfo, self.stitchRatio, self.k_stitch,\
+                    self.discrete_particle, self.output_folder, self.Elem_smock, self.elemAttr_smock, self.elasticity_smock, self.smock)
+            
             else:
+                print("NO smocking constraint!")
                 self.PNIterCount = self.PNIterCount + FEM.DiscreteShell.Advance_One_Step_IE_Hinge_EIPC(self.Elem, self.segs, self.DBC, \
                     self.edge2tri, self.edgeStencil, self.edgeInfo, \
                     self.thickness, self.bendingStiffMult, self.fiberStiffMult, self.inextLimit, self.s, self.sHat, self.kappa_s, \
@@ -373,6 +399,18 @@ class FEMDiscreteShellBase(SimulationBase):
                         self.X, self.nodeAttr, self.massMatrix, self.elemAttr, self.elasticity, \
                         self.tet, self.tetAttr, self.tetElasticity, self.rod, self.rodInfo, \
                         self.rodHinge, self.rodHingeInfo, self.discrete_particle, self.output_folder)
+                
+                elif self.smock:
+                    self.PNIterCount = self.PNIterCount + FEM.DiscreteShell.Advance_One_Step_IE_Hinge_smock(self.Elem, self.segs, self.DBC, \
+                        self.edge2tri, self.edgeStencil, self.edgeInfo, \
+                        self.thickness, self.bendingStiffMult, self.fiberStiffMult, self.inextLimit, self.s, self.sHat, self.kappa_s, \
+                        self.bodyForce, self.dt, self.PNTol, self.withCollision, self.dHat2, self.kappa, self.mu, self.epsv2, self.fricIterAmt, \
+                        self.compNodeRange, self.muComp, self.staticSolve, \
+                        self.X, self.nodeAttr, self.massMatrix, self.elemAttr, self.elasticity, \
+                        self.tet, self.tetAttr, self.tetElasticity, self.rod, self.rodInfo, \
+                        self.rodHinge, self.rodHingeInfo, self.stitchInfo, self.stitchRatio, self.k_stitch,\
+                        self.discrete_particle, self.output_folder, self.Elem_smock, self.elemAttr_smock, self.elasticity_smock, self.smock)
+                
                 else:
                     self.PNIterCount = self.PNIterCount + FEM.DiscreteShell.Advance_One_Step_IE_Hinge(self.Elem, self.segs, self.DBC, \
                         self.edge2tri, self.edgeStencil, self.edgeInfo, \

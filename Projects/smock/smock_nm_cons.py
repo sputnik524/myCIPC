@@ -49,6 +49,7 @@ if __name__ == "__main__":
     sim.frame_dt = 0.04
     sim.frame_num = 100
     sim.withCollision = True
+    sim.smock = True
 
     # density, E, nu, thickness, initial displacement case
     if algI == 0:
@@ -61,7 +62,7 @@ if __name__ == "__main__":
     elif algI == 1:
         # iso, no strain limit
         sim.initialize(sim.cloth_density_iso[clothI], sim.cloth_Ebase_iso[clothI] * membEMult,
-            sim.cloth_nubase_iso[clothI], sim.cloth_thickness_iso[clothI], 0)
+            sim.cloth_nubase_iso[clothI], sim.cloth_thickness_iso[clothI], 0, smock = sim.smock, filepath_smock = "input/smock_box_cons.obj", filepath_smock_pattern = "input/smock_box_pattern.obj")
         sim.bendingStiffMult = bendEMult / membEMult
         sim.kappa_s = Vector2d(0, 0)
     elif algI == 2:

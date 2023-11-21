@@ -127,6 +127,41 @@ void non_manifold(MESH_NODE<T, dim>& X, MESH_ELEM<dim - 1>& Elem, MESH_ELEM<dim 
     });
 }
 
+template <class T, int dim = 3>
+void non_manifold_elem(MESH_ELEM<dim - 1>& Elem, MESH_ELEM<dim - 2>& Elem_smock){
+    
+    Elem.Each([&](int id, auto data){
+        auto &[elemVInd] = data;
+        for(int i = 0; i < Elem_smock.size; i++){
+            const VECTOR<int, dim-1>& smock_ind = std::get<0>(Elem_smock.Get_Unchecked(i));
+            for(int j = 0; j < dim; j++){
+                if(elemVInd[j] == smock_ind[dim-2]){
+                    elemVInd[j] = smock_ind[0]; 
+                }
+            }
+        }
+    });
+    
+    Elem.Each([&](int id, auto data){
+        auto &[elemVInd] = data;
+        for(int j = 0; j < dim; j++){
+            int displacement_ = 0;
+            for(int i = 0; i < Elem_smock.size; i++){
+                const VECTOR<int, dim-1>& smock_ind = std::get<0>(Elem_smock.Get_Unchecked(i));
+                if(elemVInd[j] > smock_ind[dim-2]){
+                    displacement_++;
+                }
+            }
+            elemVInd[j] -= displacement_;
+        }
+    });
+
+    Elem.Each([&](int id, auto data){
+        auto &[elemVInd] = data;
+        std::cout << elemVInd[0] << " " << elemVInd[1] << " " << elemVInd[2] << std::endl;
+    });
+}
+
 template <int dim = 3>
 void map_smock_pattern(MESH_ELEM<dim - 2>& Elem_smock)
 {
@@ -214,7 +249,7 @@ template <class T, int dim = 3>
 void override_Shell_3D_withSmock(
     const std::string& filePath,
     const std::string& filePath_smock_pattern,
-    MESH_NODE<T, dim>& newX, // mid-surface node coordinates
+    MESH_NODE<T, dim>& newX, 
     MESH_ELEM<dim - 1>& newElem){
 
     MESH_NODE<T, dim> smockX;
@@ -228,6 +263,36 @@ void override_Shell_3D_withSmock(
     non_manifold<T,dim>(newX, newElem, smock_pattern);
 }
 
+template <class T, int dim = 3>
+void Add_Smock_Constraint( // Load S2 as constraints
+    const std::string& filePath,
+    const std::string& filePath_smock_pattern,
+    MESH_ELEM<dim - 1>& SmockElem){
+
+    MESH_NODE<T, dim> newX;
+    MESH_ELEM<dim - 1> newElem;
+    MESH_NODE<T, dim> smockX;
+    MESH_ELEM<dim - 1> smockElem;
+    MESH_ELEM<dim - 2> smock_pattern;
+    VECTOR<int, 4> counter = Read_TriMesh_Obj(filePath, newX, newElem);
+    Read_TriMesh_Obj_smock(filePath_smock_pattern, smockX, smockElem, smock_pattern);
+
+    map_smock_pattern<dim>(smock_pattern);
+    map_smock_pattern<dim+1>(newElem);
+
+    non_manifold_elem<T,dim>(newElem, smock_pattern);
+
+    newElem.Each([&](int id, auto data){
+        auto &[elemVInd] = data;
+        for (int i = 0; i < dim; ++i) {
+            elemVInd[i] += 1239; // TODO: hardcode the offset for the contact sphere object 
+        }
+    });
+
+    Append_Attribute(newElem, SmockElem);
+
+    std::cout << "The size of the smocking constraint: " << SmockElem.size << std::endl; 
+}
 
 template <class T, int dim = 3>
 void Add_Garment_3D(
@@ -621,6 +686,129 @@ void Compute_Discrete_Shell_Inv_Basis_NM(
     std::cout << "IB and D computed" << std::endl;
 }
 
+template <class T, int dim, bool KL>
+void Compute_Discrete_Shell_Inv_Basis_Smock(
+    MESH_NODE<T, dim>& X,
+    MESH_ELEM<dim - 1>& Elem,
+    MESH_ELEM<dim - 1>& Elem_smock,
+    const std::map<std::pair<int, int>, int>& edge2tri,
+    const std::vector<VECTOR<int, 2>>& edge,
+    std::vector<VECTOR<int, 4>>& edgeStencil,
+    std::vector<VECTOR<T, 3>>& edgeInfo,
+    MESH_ELEM_ATTR<T, dim - 1>& elemAttr,
+    MESH_ELEM_ATTR<T, dim - 1>& elemAttr_smock)
+{
+    if constexpr (dim == 2) {
+        //TODO
+    }
+    else {
+        elemAttr = MESH_ELEM_ATTR<T, dim - 1>(Elem.size);
+        elemAttr_smock = MESH_ELEM_ATTR<T, dim - 1>(Elem_smock.size);
+        std::map<std::pair<int, int>, int> edge2tri_smock;
+        
+        Elem_smock.Each([&](int id, auto data){
+            auto &[elemVInd] = data;
+            edge2tri_smock[std::pair<int, int>(elemVInd[0], elemVInd[1])] = id;
+            edge2tri_smock[std::pair<int, int>(elemVInd[1], elemVInd[2])] = id;
+            edge2tri_smock[std::pair<int, int>(elemVInd[2], elemVInd[0])] = id;
+        });
+
+        Elem.Each([&](int id, auto data) {
+            auto &[elemVInd] = data;
+            const VECTOR<T, dim>& X1 = std::get<0>(X.Get_Unchecked(elemVInd[0]));
+            const VECTOR<T, dim>& X2 = std::get<0>(X.Get_Unchecked(elemVInd[1]));
+            const VECTOR<T, dim>& X3 = std::get<0>(X.Get_Unchecked(elemVInd[2]));
+
+            const VECTOR<T, dim> E01 = X2 - X1;
+            const VECTOR<T, dim> E02 = X3 - X1;
+            MATRIX<T, dim - 1> IB; // for first fundamental form
+            IB(0, 0) = E01.length2();
+            IB(1, 0) = IB(0, 1) = E01.dot(E02);
+            IB(1, 1) = E02.length2();
+            // IB.invert();
+
+            Eigen::Matrix<T, dim, 1> cNormal;
+            Eigen::Matrix<T, dim, 1> oppNormals[3];
+            T mnorms[3];
+            MATRIX<T, dim - 1> D; // for second fundamental form
+
+            Compute_SFF(X, Elem, edge2tri, id, cNormal, oppNormals, mnorms, D);
+            
+            elemAttr.Append(IB, D);
+        });
+
+        Elem_smock.Each([&](int id, auto data) {
+            auto &[elemVInd] = data;
+            const VECTOR<T, dim>& X1 = std::get<0>(X.Get_Unchecked(elemVInd[0]));
+            const VECTOR<T, dim>& X2 = std::get<0>(X.Get_Unchecked(elemVInd[1]));
+            const VECTOR<T, dim>& X3 = std::get<0>(X.Get_Unchecked(elemVInd[2]));
+
+            const VECTOR<T, dim> E01 = X2 - X1;
+            const VECTOR<T, dim> E02 = X3 - X1;
+            MATRIX<T, dim - 1> IB; // for first fundamental form
+            IB(0, 0) = E01.length2();
+            IB(1, 0) = IB(0, 1) = E01.dot(E02);
+            IB(1, 1) = E02.length2();
+            // IB.invert();
+
+            Eigen::Matrix<T, dim, 1> cNormal;
+            Eigen::Matrix<T, dim, 1> oppNormals[3];
+            T mnorms[3];
+            MATRIX<T, dim - 1> D; // for second fundamental form
+            Compute_SFF(X, Elem_smock, edge2tri_smock, id, cNormal, oppNormals, mnorms, D);
+            
+            elemAttr_smock.Append(IB, D);
+        });
+
+        if constexpr (!KL) {
+            edgeInfo.resize(0);
+            edgeStencil.resize(0);
+            for (int eI = 0; eI < edge.size(); ++eI) {
+                const auto triFinder = edge2tri.find(std::pair<int, int>(edge[eI][0], edge[eI][1]));
+                if (triFinder != edge2tri.end()) {
+                    const VECTOR<int, 3>& elemVInd_tri = std::get<0>(Elem.Get_Unchecked(triFinder->second));
+                    VECTOR<int, 3> elemVInd;
+                    for (int j = 0; j < 3; ++j) {
+                        if (elemVInd_tri[j] == edge[eI][1]) {
+                            elemVInd[0] = elemVInd_tri[(j + 1) % 3];
+                            elemVInd[1] = edge[eI][0];
+                            elemVInd[2] = edge[eI][1];
+                            break;
+                        }
+                    }
+                    const auto finder = edge2tri.find(std::pair<int, int>(elemVInd[2], elemVInd[1]));
+                    if (finder != edge2tri.end()) {
+                        const VECTOR<int, 3>& oppElemVInd = std::get<0>(Elem.Get_Unchecked(finder->second));
+                        int v3I = 0;
+                        for (int j = 0; j < 3; ++j) {
+                            if (oppElemVInd[j] == elemVInd[1]) {
+                                v3I = oppElemVInd[(j + 1) % 3];
+                                break;
+                            }
+                        }
+                        edgeStencil.emplace_back(VECTOR<int, 4>(elemVInd[0], elemVInd[1], elemVInd[2], v3I));
+
+                        const VECTOR<T, dim>& X0 = std::get<0>(X.Get_Unchecked(elemVInd[0]));
+                        const VECTOR<T, dim>& X1 = std::get<0>(X.Get_Unchecked(elemVInd[1]));
+                        const VECTOR<T, dim>& X2 = std::get<0>(X.Get_Unchecked(elemVInd[2]));
+                        const VECTOR<T, dim>& X3 = std::get<0>(X.Get_Unchecked(v3I));
+                        Eigen::Matrix<T, dim, 1> X0e(X0.data), X1e(X1.data), X2e(X2.data), X3e(X3.data);
+                        
+                        edgeInfo.resize(edgeInfo.size() + 1);
+                        Compute_Dihedral_Angle(X0e, X1e, X2e, X3e, edgeInfo.back()[0]);
+                        edgeInfo.back()[1] = (X1 - X2).length();
+                        VECTOR<T, 3> n1 = cross(X1 - X0, X2 - X0);
+                        VECTOR<T, 3> n2 = cross(X2 - X3, X1 - X3);
+                        edgeInfo.back()[2] = (n1.length() + n2.length()) / (edgeInfo.back()[1] * 6); 
+                    }
+                }
+            }
+            std::cout << edgeStencil.size() << " hinges" << std::endl;
+        }
+    }
+    std::cout << "IB and D computed" << std::endl;
+}
+
 template <class T, int dim, bool KL, bool elasticIPC>
 T Initialize_Discrete_Shell_NM(
     T rho0, T E, T nu, T thickness, T h, T dHat2,
@@ -747,6 +935,190 @@ T Initialize_Discrete_Shell_NM(
                 k = E * std::pow(thickness, 3) / (24 * ((T)1 - nu * nu));
                 std::cout << "hinge k = " << k << std::endl;
             }
+        }
+
+        if constexpr (elasticIPC) {
+            T h2vol = h * h;
+            kappa[0] = h2vol * mu;
+            kappa[1] = h2vol * lambda;
+            kappa[2] = nu;
+            dHat2 = thickness * thickness;
+        }
+        else {
+            //TODO: adaptive kappa
+        }
+    }
+    std::cout << "shell initialized" << std::endl;
+    return dHat2;
+}
+
+template <class T, int dim, bool KL, bool elasticIPC>
+T Initialize_Discrete_Shell_Smock(
+    T rho0, T E, T nu, T thickness, T h, T dHat2,
+    MESH_NODE<T, dim>& X, // mid-surface node coordinates
+    MESH_ELEM<dim - 1>& Elem,
+    MESH_ELEM<dim - 1>& Elem_smock,
+    std::vector<VECTOR<int, 2>>& seg,
+    std::map<std::pair<int, int>, int>& edge2tri,
+    std::vector<VECTOR<int, 4>>& edgeStencil,
+    std::vector<VECTOR<T, 3>>& edgeInfo,
+    MESH_NODE_ATTR<T, dim>& nodeAttr,
+    CSR_MATRIX<T>& M, // mass matrix
+    const VECTOR<T, dim>& gravity,
+    std::vector<T>& b, // body force
+    MESH_ELEM_ATTR<T, dim - 1>& elemAttr,
+    MESH_ELEM_ATTR<T, dim - 1>& elemAttr_smock,
+    FIXED_COROTATED<T, dim - 1>& elasticityAttr,
+    FIXED_COROTATED<T, dim - 1>& elasticityAttr_smock,
+    VECTOR<T, 3>& kappa)
+{
+    if constexpr (dim == 2) {
+        //TODO
+    }
+    else {
+        MESH_ELEM<dim - 1> filteredElem(Elem.size);
+        Elem.Each([&](int id, auto data){
+            auto &[elemVInd] = data;
+            const VECTOR<T, dim>& X1 = std::get<0>(X.Get_Unchecked(elemVInd[0]));
+            const VECTOR<T, dim>& X2 = std::get<0>(X.Get_Unchecked(elemVInd[1]));
+            const VECTOR<T, dim>& X3 = std::get<0>(X.Get_Unchecked(elemVInd[2]));
+
+            const VECTOR<T, dim> E01 = X2 - X1;
+            const VECTOR<T, dim> E02 = X3 - X1;
+            MATRIX<T, dim - 1> IB; // for first fundamental form
+            IB(0, 0) = E01.length2();
+            IB(1, 0) = IB(0, 1) = E01.dot(E02);
+            IB(1, 1) = E02.length2();
+            if(IB.determinant() != 0) {
+                filteredElem.Append(elemVInd);
+            }
+        });
+        filteredElem.deep_copy_to(Elem);
+
+        Write_TriMesh_Obj(X, Elem_smock, "visualize.obj");
+        MESH_ELEM<dim - 1> filteredElem_smock(Elem_smock.size);
+        Elem_smock.Each([&](int id, auto data){
+            auto &[elemVInd] = data;
+            const VECTOR<T, dim>& X1 = std::get<0>(X.Get_Unchecked(elemVInd[0]));
+            const VECTOR<T, dim>& X2 = std::get<0>(X.Get_Unchecked(elemVInd[1]));
+            const VECTOR<T, dim>& X3 = std::get<0>(X.Get_Unchecked(elemVInd[2]));
+
+            const VECTOR<T, dim> E01 = X2 - X1;
+            const VECTOR<T, dim> E02 = X3 - X1;
+            MATRIX<T, dim - 1> IB; // for first fundamental form
+            IB(0, 0) = E01.length2();
+            IB(1, 0) = IB(0, 1) = E01.dot(E02);
+            IB(1, 1) = E02.length2();
+            if(IB.determinant() != 0) {
+                filteredElem_smock.Append(elemVInd);
+            }
+        });
+        filteredElem_smock.deep_copy_to(Elem_smock);
+
+        std::cout << "NUmber of Filtered Smocking constraints: " << Elem_smock.size << std::endl;
+
+        nodeAttr = MESH_NODE_ATTR<T, dim>(X.size);
+        for (int i = 0; i < X.size; ++i) {
+            nodeAttr.Append(std::get<0>(X.Get_Unchecked(i)), VECTOR<T, dim>(0, 0), VECTOR<T, dim>(), 0);
+        }
+
+        edge2tri.clear();
+        Elem.Each([&](int id, auto data){
+            auto &[elemVInd] = data;
+            edge2tri[std::pair<int, int>(elemVInd[0], elemVInd[1])] = id;
+            edge2tri[std::pair<int, int>(elemVInd[1], elemVInd[2])] = id;
+            edge2tri[std::pair<int, int>(elemVInd[2], elemVInd[0])] = id;
+        });
+
+        std::vector<int> boundaryNode;
+        std::vector<VECTOR<int, 2>> edge;
+        std::vector<VECTOR<int, 3>> boundaryTri;
+        if constexpr (!KL) {
+            Find_Surface_Primitives(X.size, Elem, boundaryNode, edge, boundaryTri);
+        }
+        Compute_Discrete_Shell_Inv_Basis_Smock<T, dim, KL>(X, Elem, Elem_smock, edge2tri, edge, edgeStencil, edgeInfo, elemAttr, elemAttr_smock);
+
+        // mass matrix and body force
+        std::vector<Eigen::Triplet<T>> triplets;
+        b.resize(0);
+        b.resize(X.size * dim, 0);
+        T massPortionMean = 0;
+        Elem.Each([&](int id, auto data) {
+            auto &[elemVInd] = data;
+            const VECTOR<T, dim>& X1 = std::get<0>(X.Get_Unchecked(elemVInd[0]));
+            const VECTOR<T, dim>& X2 = std::get<0>(X.Get_Unchecked(elemVInd[1]));
+            const VECTOR<T, dim>& X3 = std::get<0>(X.Get_Unchecked(elemVInd[2]));
+            T& m1 = std::get<FIELDS<MESH_NODE_ATTR<T, dim>>::m>(nodeAttr.Get_Unchecked(elemVInd[0]));
+            T& m2 = std::get<FIELDS<MESH_NODE_ATTR<T, dim>>::m>(nodeAttr.Get_Unchecked(elemVInd[1]));
+            T& m3 = std::get<FIELDS<MESH_NODE_ATTR<T, dim>>::m>(nodeAttr.Get_Unchecked(elemVInd[2]));
+
+            const T massPortion = cross(X2 - X1, X3 - X1).length() / 2 * thickness * rho0 / 3;
+            massPortionMean += massPortion;
+            m1 += massPortion; m2 += massPortion; m3 += massPortion;
+            for (int endI = 0; endI < dim; ++endI) {
+                for (int dimI = 0; dimI < dim; ++dimI) {
+                    triplets.emplace_back(elemVInd[endI] * dim + dimI, elemVInd[endI] * dim + dimI, massPortion);
+                    b[elemVInd[endI] * dim + dimI] += massPortion * gravity[dimI];
+                }
+            }
+        });
+        if (Elem.size) {
+            massPortionMean /= Elem.size;
+        }
+        for (const auto& segI : seg) {
+            // const VECTOR<T, dim> X0 = std::get<0>(X.Get_Unchecked(segI[0]));
+            // const VECTOR<T, dim> X1 = std::get<0>(X.Get_Unchecked(segI[1]));
+            // const T massPortion = (X0 - X1).length() * M_PI * thickness * thickness / 4 * rho0 / 2;
+            for (int endI = 0; endI < 2; ++endI) {
+                for (int dimI = 0; dimI < dim; ++dimI) {
+                    // triplets.emplace_back(segI[endI] * dim + dimI, segI[endI] * dim + dimI, massPortion);
+                    triplets.emplace_back(segI[endI] * dim + dimI, segI[endI] * dim + dimI, massPortionMean * 3);
+                }
+                // b[segI[endI] * dim + 1] += massPortion * gravity[1];
+            }
+        }
+        M.Construct_From_Triplet(X.size * dim, X.size * dim, triplets);
+        //NOTE: for implicit, need to project Matrix for Dirichlet boundary condition
+
+        // quadratures
+        elasticityAttr = FIXED_COROTATED<T, dim - 1>(Elem.size);
+        elasticityAttr_smock = FIXED_COROTATED<T, dim - 1>(Elem_smock.size);
+        const T lambda = E * nu / ((T)1 - nu * nu);
+        const T mu = E / ((T)2 * ((T)1 + nu));
+        T areaSum = 0;
+        Elem.Each([&](int id, auto data) {
+            auto &[elemVInd] = data;
+            const VECTOR<T, dim>& X1 = std::get<0>(X.Get_Unchecked(elemVInd[0]));
+            const VECTOR<T, dim>& X2 = std::get<0>(X.Get_Unchecked(elemVInd[1]));
+            const VECTOR<T, dim>& X3 = std::get<0>(X.Get_Unchecked(elemVInd[2]));
+            T area = cross(X2 - X1, X3 - X1).length() / 2;
+            T vol = area * thickness;
+            elasticityAttr.Append(MATRIX<T, dim - 1>(), vol, lambda, mu);
+            areaSum += area;
+        });
+
+        Elem_smock.Each([&](int id, auto data) {
+            auto &[elemVInd] = data;
+            const VECTOR<T, dim>& X1 = std::get<0>(X.Get_Unchecked(elemVInd[0]));
+            const VECTOR<T, dim>& X2 = std::get<0>(X.Get_Unchecked(elemVInd[1]));
+            const VECTOR<T, dim>& X3 = std::get<0>(X.Get_Unchecked(elemVInd[2]));
+            T area = cross(X2 - X1, X3 - X1).length() / 2;
+            T vol = area * thickness;
+            elasticityAttr_smock.Append(MATRIX<T, dim - 1>(), vol, 10.0 * lambda, 10.0 * mu); //  make a stiffer smocking constraint
+            // areaSum += area;
+        });
+
+        if constexpr (!KL) {
+            if (elemAttr.size) {
+                T& k = std::get<FIELDS<MESH_ELEM_ATTR<T, dim>>::P>(elemAttr.Get_Unchecked(0))(0, 0);
+                k = E * std::pow(thickness, 3) / (24 * ((T)1 - nu * nu));
+                std::cout << "hinge k = " << k << std::endl;
+            }
+            // if (elasticityAttr_smock.size) {
+            //     T& k = std::get<FIELDS<MESH_ELEM_ATTR<T, dim>>::P>(elasticityAttr_smock.Get_Unchecked(0))(0, 0);
+            //     k = E * std::pow(thickness, 3) / (24 * ((T)1 - nu * nu));
+            //     std::cout << "smock hinge k = " << k << std::endl;
+            // }
         }
 
         if constexpr (elasticIPC) {
@@ -1497,6 +1869,7 @@ void Export_Discrete_Shell(py::module& m) {
     shell_m.def("Add_Shell", &Add_Discrete_Shell_3D<double>);
     shell_m.def("Add_Shell_withSmock", &Add_Discrete_Shell_3D_withSmock<double>);
     shell_m.def("reload_Shell_withSmock", &override_Shell_3D_withSmock<double>);
+    shell_m.def("Add_Smock_Constraint", &Add_Smock_Constraint<double>);
     shell_m.def("Make_Rod", &Make_Rod<double, 3>);
     shell_m.def("Make_Rod_Net", &Make_Rod_Net<double, 3>);
     shell_m.def("Add_Discrete_Particles", &Add_Discrete_Particles<double, 3>);
@@ -1508,6 +1881,7 @@ void Export_Discrete_Shell(py::module& m) {
     shell_m.def("Initialize_Shell_EIPC", &Initialize_Discrete_Shell<double, 3, true, true>);
     shell_m.def("Initialize_Shell_Hinge_EIPC", &Initialize_Discrete_Shell<double, 3, false, true>);
     shell_m.def("Initialize_Shell_Hinge_EIPC_NM", &Initialize_Discrete_Shell_NM<double, 3, false, true>);
+    shell_m.def("Initialize_Shell_Hinge_EIPC_Smock", &Initialize_Discrete_Shell_Smock<double, 3, false, true>);
     shell_m.def("Initialize_Discrete_Rod", &Initialize_Discrete_Rod<double, 3>);
     shell_m.def("Initialize_Discrete_Particle", &Initialize_Discrete_Particle<double, 3>);
     shell_m.def("Initialize_EIPC", &Initialize_EIPC<double>);
@@ -1517,8 +1891,10 @@ void Export_Discrete_Shell(py::module& m) {
     // shell_m.def("Initialize_Displacement", &Initialize_Displacement<double, 3>);
     shell_m.def("Advance_One_Step_IE", &Advance_One_Step_IE_Discrete_Shell<double, 3, true, false>);
     shell_m.def("Advance_One_Step_IE_Hinge", &Advance_One_Step_IE_Discrete_Shell<double, 3, false, false>);
+    shell_m.def("Advance_One_Step_IE_Hinge_smock", &Advance_One_Step_IE_Discrete_Shell_smock<double, 3, false, false>);
     shell_m.def("Advance_One_Step_IE_EIPC", &Advance_One_Step_IE_Discrete_Shell<double, 3, true, true>);
     shell_m.def("Advance_One_Step_IE_Hinge_EIPC", &Advance_One_Step_IE_Discrete_Shell<double, 3, false, true>);
+    shell_m.def("Advance_One_Step_IE_Hinge_EIPC_Smock", &Advance_One_Step_IE_Discrete_Shell_smock<double, 3, false, true>);
     shell_m.def("Advance_One_Step_IE_Flow", &Advance_One_Step_IE_Discrete_Shell<double, 3, false, false, true>);
 
     shell_m.def("Advance_One_Step_SIE", &Advance_One_Step_SIE_Discrete_Shell<double, 3, true, false>);
