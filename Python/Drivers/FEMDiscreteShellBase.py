@@ -144,6 +144,7 @@ class FEMDiscreteShellBase(SimulationBase):
         self.scaleZMultStep = 1
         self.zeroVel = False
         self.smock = False
+        self.smock_cons = 1.0 
 
     def add_shell_3D(self, filePath, translate, rotCenter, rotAxis, rotDeg): # 3D
         return FEM.DiscreteShell.Add_Shell(filePath, translate, Vector3d(1, 1, 1), rotCenter, rotAxis, rotDeg, self.X, self.Elem, self.compNodeRange)
@@ -218,7 +219,7 @@ class FEMDiscreteShellBase(SimulationBase):
             FEM.DiscreteShell.Add_Smock_Constraint(filepath_smock, filepath_smock_pattern, self.Elem_smock)
             self.dHat2 = FEM.DiscreteShell.Initialize_Shell_Hinge_EIPC_Smock(p_density, E, nu, thickness, self.dt, self.dHat2, self.X, self.Elem, self.Elem_smock, self.segs, \
             self.edge2tri, self.edgeStencil, self.edgeInfo, self.nodeAttr, self.massMatrix, self.gravity, self.bodyForce, \
-            self.elemAttr, self.elemAttr_smock, self.elasticity, self.elasticity_smock, self.kappa)
+            self.elemAttr, self.elemAttr_smock, self.elasticity, self.elasticity_smock, self.kappa, self.smock_cons)
         
         else:
             print("Init with load mesh!")

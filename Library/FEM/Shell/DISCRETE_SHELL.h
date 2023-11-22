@@ -970,7 +970,7 @@ T Initialize_Discrete_Shell_Smock(
     MESH_ELEM_ATTR<T, dim - 1>& elemAttr_smock,
     FIXED_COROTATED<T, dim - 1>& elasticityAttr,
     FIXED_COROTATED<T, dim - 1>& elasticityAttr_smock,
-    VECTOR<T, 3>& kappa)
+    VECTOR<T, 3>& kappa, T smock_cons)
 {
     if constexpr (dim == 2) {
         //TODO
@@ -1125,7 +1125,7 @@ T Initialize_Discrete_Shell_Smock(
             const VECTOR<T, dim>& X3 = std::get<0>(X.Get_Unchecked(elemVInd[2]));
             T area = cross(X2 - X1, X3 - X1).length() / 2;
             T vol = area * thickness;
-            elasticityAttr_smock.Append(MATRIX<T, dim - 1>(), vol, lambda, mu); //  make a stiffer smocking constraint
+            elasticityAttr_smock.Append(MATRIX<T, dim - 1>(), vol, lambda * smock_cons, mu * smock_cons); //  make a stiffer smocking constraint
             // areaSum += area;
         });
 

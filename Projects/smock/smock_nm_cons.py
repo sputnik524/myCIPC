@@ -40,7 +40,7 @@ if __name__ == "__main__":
     # sim.set_DBC(Vector3d(-0.1, -0.1, -0.1), Vector3d(1.1, 1e-3, 1.1), 
     #     Vector3d(0, 0, 0), Vector3d(0, 0, 0), Vector3d(0, 1, 0), 0)
     
-    sim.add_shell_with_scale_3D_smock("input/smock_box.obj","input/smock_box_pattern.obj", Vector3d(0, 6.0, 8.0), Vector3d(1.0, 1.0, 1.0),\
+    sim.add_shell_with_scale_3D_smock("input/smock_box.obj","input/smock_box_pattern.obj", Vector3d(0, 5.1, 8.0), Vector3d(1.0, 1.0, 1.0),\
         Vector3d(0, 0, 0), Vector3d(1, 0, 0), -90)
 
     sim.muComp = StdVectorXd([0, 0, sim.mu,  0, 0, sim.mu,  sim.mu, sim.mu, 0.1])
@@ -50,6 +50,7 @@ if __name__ == "__main__":
     sim.frame_num = 100
     sim.withCollision = True
     sim.smock = True
+    sim.smock_cons = 0.2 
 
     # density, E, nu, thickness, initial displacement case
     if algI == 0:
