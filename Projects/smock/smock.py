@@ -40,7 +40,7 @@ if __name__ == "__main__":
     # sim.set_DBC(Vector3d(-0.1, -0.1, -0.1), Vector3d(1.1, 1e-3, 1.1), 
     #     Vector3d(0, 0, 0), Vector3d(0, 0, 0), Vector3d(0, 1, 0), 0)
     
-    sim.add_shell("input/smock_box.obj", Vector3d(0, 6.0, 8.0), \
+    sim.add_shell_3D("input/smock_box.obj", Vector3d(0, 6.0, 8.0), \
         Vector3d(0, 0, 0), Vector3d(1, 0, 0), -90)
 
     sim.muComp = StdVectorXd([0, 0, sim.mu,  0, 0, sim.mu,  sim.mu, sim.mu, 0.1])
