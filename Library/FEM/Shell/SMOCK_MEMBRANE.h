@@ -397,7 +397,7 @@ void Compute_Smock_Membrane_Hessian(
         std::cout << "Starting computing hessian smocking elems" << std::endl;
         Elem_smock.Join(elasticityAttr_smock).Par_Each([&](int id, auto data) {
             
-            if (tripletStartInd[id] >= 0) {
+            if (tripletStartInd[id + Elem.size] >= 0) { // TODO: reset id 
                 auto &[elemVInd, F, vol, lambda, mu] = data;
                 const VECTOR<T, dim>& x1 = std::get<0>(X.Get_Unchecked(elemVInd[0]));
                 const VECTOR<T, dim>& x2 = std::get<0>(X.Get_Unchecked(elemVInd[1]));

@@ -51,6 +51,7 @@ if __name__ == "__main__":
     sim.withCollision = True
     sim.smock = True
     sim.smock_cons = 0.2 
+    # sim.staticSolve = True
 
     # density, E, nu, thickness, initial displacement case
     if algI == 0:
