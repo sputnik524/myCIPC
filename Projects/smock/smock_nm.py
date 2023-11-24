@@ -50,7 +50,7 @@ if __name__ == "__main__":
     sim.frame_num = 100
     sim.withCollision = True
 
-    # sim.staticSolve = True
+    sim.staticSolve = True
 
     # density, E, nu, thickness, initial displacement case
     if algI == 0:
