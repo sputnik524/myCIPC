@@ -145,11 +145,12 @@ class FEMDiscreteShellBase(SimulationBase):
         self.zeroVel = False
         self.smock = False
         self.smock_cons = 1.0 
+        self.smock_size = 130
 
         # smocking pattern data
         self.coarse_mesh_res = 21
         self.fine_rate = 5
-        self.fine_mesh_res = self.coarse_mesh_res * self.fine_mesh_res + 1 
+        self.fine_mesh_res = self.coarse_mesh_res * self.fine_rate + 1 
         self.uniform_stitching_ratio = 1.0
         self.if_contact = True
 
@@ -166,9 +167,10 @@ class FEMDiscreteShellBase(SimulationBase):
         FEM.DiscreteShell.Add_Garment(filePath, translate, scale, rotCenter, rotAxis, rotDeg, \
             self.X, self.X_stage, self.Elem, self.stitchInfo, self.stitchRatio, self.compNodeRange)
         
-    def add_stitching(self):
-        FEM.DiscreteShell.Add_Stitching(self.fine_mesh_res, self.uniform_stitching_ratio, self.stitchInfo, self.stitchRatio)
-
+    def add_stitching(self, vis = False, both_sides = False):
+        FEM.DiscreteShell.Add_Stitching(self.fine_mesh_res, self.uniform_stitching_ratio, self.stitchInfo, self.stitchRatio, self.smock_size, both_sides)
+        if vis:
+            FEM.DiscreteShell.vis_stitching(self.X, self.Elem, self.stitchInfo)
 
     def add_mannequin(self, filePath, translate, scale, rotCenter, rotAxis, rotDeg):
         meshCounter = FEM.DiscreteShell.Add_Shell(filePath, translate, scale, rotCenter, rotAxis, rotDeg, self.X, self.Elem, self.compNodeRange)
@@ -227,7 +229,7 @@ class FEMDiscreteShellBase(SimulationBase):
 
         elif smock:
             print("Init with smock mode!")
-            FEM.DiscreteShell.Add_Smock_Constraint(filepath_smock, filepath_smock_pattern, self.Elem_smock, self.if_contact)
+            FEM.DiscreteShell.Add_Smock_Constraint(filepath_smock, filepath_smock_pattern, self.Elem_smock, self.smock_size , self.if_contact)
             self.dHat2 = FEM.DiscreteShell.Initialize_Shell_Hinge_EIPC_Smock(p_density, E, nu, thickness, self.dt, self.dHat2, self.X, self.Elem, self.Elem_smock, self.segs, \
             self.edge2tri, self.edgeStencil, self.edgeInfo, self.nodeAttr, self.massMatrix, self.gravity, self.bodyForce, \
             self.elemAttr, self.elemAttr_smock, self.elasticity, self.elasticity_smock, self.kappa, self.smock_cons)

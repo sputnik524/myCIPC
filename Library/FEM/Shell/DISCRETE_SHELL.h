@@ -275,7 +275,7 @@ template <class T, int dim = 3>
 void Add_Smock_Constraint( // Load S2 as constraints
     const std::string& filePath,
     const std::string& filePath_smock_pattern,
-    MESH_ELEM<dim - 1>& SmockElem, bool if_contact = true){
+    MESH_ELEM<dim - 1>& SmockElem, int& smock_size, bool if_contact = true){
 
     MESH_NODE<T, dim> newX;
     MESH_ELEM<dim - 1> newElem;
@@ -300,7 +300,7 @@ void Add_Smock_Constraint( // Load S2 as constraints
     }
 
     Append_Attribute(newElem, SmockElem);
-
+    smock_size = SmockElem.size;
     std::cout << "The size of the smocking constraint: " << SmockElem.size << std::endl; 
 }
 
@@ -356,18 +356,73 @@ void Add_Garment_3D(
 
 template <class T>
 void Add_stitching(int mesh_size, T uniform_stitching_ratio, std::vector<VECTOR<int, 3>>& stitchNodes, 
-    std::vector<T>& stitchRatio)
+    std::vector<T>& stitchRatio, int nm_offset, bool bothside = false)
 {
     // Explicitly compute the stitching line btw two planar meshes
     stitchNodes.resize(2 * (mesh_size - 1));
     stitchRatio.resize(2 * (mesh_size - 1));
-    int start_ind = mesh_size * (mesh_size - 1);
-    for(int i = 0; i < mesh_size-1; i++){
-        stitchNodes[i][0] = start_ind + i + mesh_size;
-        stitchNodes[i][1] = start_ind + i;
-        stitchNodes[i][2] = start_ind + i + 1;
-        stitchRatio[i] = uniform_stitching_ratio;
+    if(bothside){
+        stitchNodes.resize(4 * (mesh_size - 1));
+        stitchRatio.resize(4 * (mesh_size - 1));
     }
+    std::cout << "The non-manifold offset: " << nm_offset << std::endl;
+    int start_ind = mesh_size * (mesh_size - 1) - nm_offset;
+    int start_ind_2;
+    if(bothside)
+        start_ind_2 = 3 * mesh_size * mesh_size - mesh_size - nm_offset;
+    for(int i = 0; i < mesh_size-1; i++){
+        if(bothside){
+            stitchNodes[4*i][0] = start_ind + i + mesh_size;
+            stitchNodes[4*i][1] = start_ind + i;
+            stitchNodes[4*i][2] = start_ind + i + 1;
+            stitchRatio[4*i] = uniform_stitching_ratio;
+
+            stitchNodes[4*i + 1][0] = start_ind + i + mesh_size + 1;
+            stitchNodes[4*i + 1][1] = start_ind + i;
+            stitchNodes[4*i + 1][2] = start_ind + i + 1;
+            stitchRatio[4*i + 1] = uniform_stitching_ratio;
+        
+            stitchNodes[4*i + 2][0] = start_ind_2 + i;
+            stitchNodes[4*i + 2][1] = i;
+            stitchNodes[4*i + 2][2] = i + 1;
+            stitchRatio[4*i + 2] = uniform_stitching_ratio;
+
+            stitchNodes[4*i + 3][0] = start_ind_2 + i + 1;
+            stitchNodes[4*i + 3][1] = i;
+            stitchNodes[4*i + 3][2] = i + 1;
+            stitchRatio[4*i + 3] = uniform_stitching_ratio;
+        }
+
+
+        else{
+            stitchNodes[2*i][0] = start_ind + i + mesh_size;
+            stitchNodes[2*i][1] = start_ind + i;
+            stitchNodes[2*i][2] = start_ind + i + 1;
+            stitchRatio[2*i] = uniform_stitching_ratio;
+
+            stitchNodes[2*i + 1][0] = start_ind + i + mesh_size + 1;
+            stitchNodes[2*i + 1][1] = start_ind + i;
+            stitchNodes[2*i + 1][2] = start_ind + i + 1;
+            stitchRatio[2*i + 1] = uniform_stitching_ratio;
+        }
+
+    }
+}
+
+template <class T, int dim = 3>
+void vis_stitching(MESH_NODE<T, dim>& X, MESH_ELEM<dim - 1>& Elem, std::vector<VECTOR<int, 3>>& stitchNodes){
+    MESH_ELEM<dim - 1> newElem;
+    VECTOR<int, 3> tri;
+    for(int i = 0; i < stitchNodes.size(); i++){
+        tri(0) = stitchNodes[i][0];
+        tri(1) = stitchNodes[i][1];
+        tri(2) = stitchNodes[i][2];
+        newElem.Append(tri);
+    }
+
+    Append_Attribute(newElem, Elem);
+
+    Write_TriMesh_Obj(X, Elem, "vis_stitch.obj");
 }
 
 template <class T, int dim>
@@ -1914,6 +1969,7 @@ void Export_Discrete_Shell(py::module& m) {
 
     shell_m.def("Add_Garment", &Add_Garment_3D<double>);
     shell_m.def("Add_Stitching", &Add_stitching<double>);
+    shell_m.def("vis_stitching", &vis_stitching<double>);
     shell_m.def("Add_Shell", &Add_Discrete_Shell_3D<double>);
     shell_m.def("Add_Shell_withSmock", &Add_Discrete_Shell_3D_withSmock<double>);
     shell_m.def("reload_Shell_withSmock", &override_Shell_3D_withSmock<double>);

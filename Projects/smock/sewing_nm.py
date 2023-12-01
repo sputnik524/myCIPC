@@ -59,8 +59,8 @@ if __name__ == "__main__":
     sim.frame_dt = 0.04
     sim.frame_num = 100
     sim.withCollision = True
-    sim.smock = True
-    sim.smock_cons = 0.2 
+    # sim.smock = True
+    # sim.smock_cons = 0.2 
     sim.uniform_stitching_ratio = 0.25
     sim.if_contact = False
     # sim.gravity = Vector3d(0, 0, 0) # cancel this term after setting DBC
