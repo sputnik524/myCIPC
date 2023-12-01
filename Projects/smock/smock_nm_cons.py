@@ -32,7 +32,7 @@ if __name__ == "__main__":
     sim.add_shell_with_scale_3D("input/sphere1K_0.5.obj", Vector3d(0.9, 0, 0.6), \
         Vector3d(4.0, 4.0, 4.0),Vector3d(0, 0, 0), Vector3d(0, 0, 0), 0)
     sim.set_DBC(Vector3d(-0.1, -0.1, -0.1), Vector3d(1.1, 1.1, 1.1), 
-        Vector3d(0, 0.5, 0), Vector3d(0, 0, 0), Vector3d(0, 1, 0), 0)
+        Vector3d(0, 0.0, 0), Vector3d(0, 0, 0), Vector3d(0, 1, 0), 0)
     sim.MDBC_tmin = 1
     
     sim.add_shell_with_scale_3D_smock("input/smock_box.obj","input/smock_box_pattern.obj", Vector3d(0, 1.1, 1.4), Vector3d(0.2, 0.2, 0.2),\
@@ -42,11 +42,11 @@ if __name__ == "__main__":
 
     sim.dt = 0.04
     sim.frame_dt = 0.04
-    sim.frame_num = 200
+    sim.frame_num = 100
     sim.withCollision = True
     sim.smock = True
-    sim.smock_cons = 0.1 
-    sim.gravity = sim.Vec(0, 0, 0)
+    sim.smock_cons = 0.2
+    # sim.gravity = sim.Vec(0, 0, 0)
     # sim.staticSolve = True
 
     # density, E, nu, thickness, initial displacement case
