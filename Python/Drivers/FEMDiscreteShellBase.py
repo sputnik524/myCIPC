@@ -146,6 +146,13 @@ class FEMDiscreteShellBase(SimulationBase):
         self.smock = False
         self.smock_cons = 1.0 
 
+        # smocking pattern data
+        self.coarse_mesh_res = 21
+        self.fine_rate = 5
+        self.fine_mesh_res = self.coarse_mesh_res * self.fine_mesh_res + 1 
+        self.uniform_stitching_ratio = 1.0
+        self.if_contact = True
+
     def add_shell_3D(self, filePath, translate, rotCenter, rotAxis, rotDeg): # 3D
         return FEM.DiscreteShell.Add_Shell(filePath, translate, Vector3d(1, 1, 1), rotCenter, rotAxis, rotDeg, self.X, self.Elem, self.compNodeRange)
     
@@ -158,6 +165,10 @@ class FEMDiscreteShellBase(SimulationBase):
     def add_garment_3D(self, filePath, translate, scale, rotCenter, rotAxis, rotDeg):
         FEM.DiscreteShell.Add_Garment(filePath, translate, scale, rotCenter, rotAxis, rotDeg, \
             self.X, self.X_stage, self.Elem, self.stitchInfo, self.stitchRatio, self.compNodeRange)
+        
+    def add_stitching(self):
+        FEM.DiscreteShell.Add_Stitching(self.fine_mesh_res, self.uniform_stitching_ratio, self.stitchInfo, self.stitchRatio)
+
 
     def add_mannequin(self, filePath, translate, scale, rotCenter, rotAxis, rotDeg):
         meshCounter = FEM.DiscreteShell.Add_Shell(filePath, translate, scale, rotCenter, rotAxis, rotDeg, self.X, self.Elem, self.compNodeRange)
@@ -216,7 +227,7 @@ class FEMDiscreteShellBase(SimulationBase):
 
         elif smock:
             print("Init with smock mode!")
-            FEM.DiscreteShell.Add_Smock_Constraint(filepath_smock, filepath_smock_pattern, self.Elem_smock)
+            FEM.DiscreteShell.Add_Smock_Constraint(filepath_smock, filepath_smock_pattern, self.Elem_smock, self.if_contact)
             self.dHat2 = FEM.DiscreteShell.Initialize_Shell_Hinge_EIPC_Smock(p_density, E, nu, thickness, self.dt, self.dHat2, self.X, self.Elem, self.Elem_smock, self.segs, \
             self.edge2tri, self.edgeStencil, self.edgeInfo, self.nodeAttr, self.massMatrix, self.gravity, self.bodyForce, \
             self.elemAttr, self.elemAttr_smock, self.elasticity, self.elasticity_smock, self.kappa, self.smock_cons)

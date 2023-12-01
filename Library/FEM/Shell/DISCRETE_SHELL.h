@@ -165,12 +165,20 @@ void non_manifold_elem(MESH_ELEM<dim - 1>& Elem, MESH_ELEM<dim - 2>& Elem_smock)
 template <int dim = 3>
 void map_smock_pattern(MESH_ELEM<dim - 2>& Elem_smock)
 {
-    int rows_c = 10; // TODO: use default S2 smock pattern with 10*10 resolution and default S4 10-times fine resolution
-    int cols_c = 10;
-    int fine = 10;
+    // int rows_c = 10; // TODO: use default S2 smock pattern with 10*10 resolution and default S4 10-times fine resolution
+    // int cols_c = 10;
+    // int fine = 10;
+    // int rows_f = rows_c * fine + 1;
+    // int cols_f = cols_c * fine + 1;
+    // int offset = 5 * rows_f + 5; 
+
+    int rows_c = 21; 
+    int cols_c = 21;
+    int fine = 5;
     int rows_f = rows_c * fine + 1;
     int cols_f = cols_c * fine + 1;
-    int offset = 5 * rows_f + 5; 
+    int offset = 2 * rows_f + 2;
+
     Elem_smock.Each([&](int id, auto data){
         auto &[elemVInd] = data;
         // std::cout << "mapping smocking index: " << id << " from " <<  elemVInd[0] << " " << elemVInd[1] << std::endl;
@@ -267,7 +275,7 @@ template <class T, int dim = 3>
 void Add_Smock_Constraint( // Load S2 as constraints
     const std::string& filePath,
     const std::string& filePath_smock_pattern,
-    MESH_ELEM<dim - 1>& SmockElem){
+    MESH_ELEM<dim - 1>& SmockElem, bool if_contact = true){
 
     MESH_NODE<T, dim> newX;
     MESH_ELEM<dim - 1> newElem;
@@ -282,12 +290,14 @@ void Add_Smock_Constraint( // Load S2 as constraints
 
     non_manifold_elem<T,dim>(newElem, smock_pattern);
 
-    newElem.Each([&](int id, auto data){
-        auto &[elemVInd] = data;
-        for (int i = 0; i < dim; ++i) {
-            elemVInd[i] += 1239; // TODO: hardcode the offset for the contact sphere object 
-        }
-    });
+    if(if_contact){
+        newElem.Each([&](int id, auto data){
+            auto &[elemVInd] = data;
+            for (int i = 0; i < dim; ++i) {
+                elemVInd[i] += 1239; // TODO: hardcode the offset for the contact sphere object 
+            }
+        });
+    }
 
     Append_Attribute(newElem, SmockElem);
 
@@ -342,6 +352,22 @@ void Add_Garment_3D(
     Append_Attribute(newElem, Elem);
 
     compNodeRange.emplace_back(X.size);
+}
+
+template <class T>
+void Add_stitching(int mesh_size, T uniform_stitching_ratio, std::vector<VECTOR<int, 3>>& stitchNodes, 
+    std::vector<T>& stitchRatio)
+{
+    // Explicitly compute the stitching line btw two planar meshes
+    stitchNodes.resize(2 * (mesh_size - 1));
+    stitchRatio.resize(2 * (mesh_size - 1));
+    int start_ind = mesh_size * (mesh_size - 1);
+    for(int i = 0; i < mesh_size-1; i++){
+        stitchNodes[i][0] = start_ind + i + mesh_size;
+        stitchNodes[i][1] = start_ind + i;
+        stitchNodes[i][2] = start_ind + i + 1;
+        stitchRatio[i] = uniform_stitching_ratio;
+    }
 }
 
 template <class T, int dim>
@@ -1887,6 +1913,7 @@ void Export_Discrete_Shell(py::module& m) {
     py::module shell_m = m.def_submodule("DiscreteShell", "A submodule of JGSL for FEM discrete shell simulation");
 
     shell_m.def("Add_Garment", &Add_Garment_3D<double>);
+    shell_m.def("Add_Stitching", &Add_stitching<double>);
     shell_m.def("Add_Shell", &Add_Discrete_Shell_3D<double>);
     shell_m.def("Add_Shell_withSmock", &Add_Discrete_Shell_3D_withSmock<double>);
     shell_m.def("reload_Shell_withSmock", &override_Shell_3D_withSmock<double>);
