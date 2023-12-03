@@ -202,7 +202,8 @@ VECTOR<int, 4> Add_Discrete_Shell_3D_withSmock(
     T rotAngDeg,
     MESH_NODE<T, dim>& X, // mid-surface node coordinates
     MESH_ELEM<dim - 1>& Elem, // the mid-surface triangles
-    std::vector<int>& compNodeRange)
+    std::vector<int>& compNodeRange,
+    MESH_ELEM<dim - 2>& Smock_pattern)
 {
     MESH_NODE<T, dim> newX;
     MESH_ELEM<dim - 1> newElem;
@@ -247,6 +248,7 @@ VECTOR<int, 4> Add_Discrete_Shell_3D_withSmock(
 
     Append_Attribute(newX, X);
     Append_Attribute(newElem, Elem);
+    Append_Attribute(smock_pattern, Smock_pattern);
 
     compNodeRange.emplace_back(X.size);
 
@@ -354,6 +356,7 @@ void Add_Garment_3D(
     compNodeRange.emplace_back(X.size);
 }
 
+// explicitly calculate the stitching line with known input mesh 
 template <class T>
 void Add_stitching(int mesh_size, T uniform_stitching_ratio, std::vector<VECTOR<int, 3>>& stitchNodes, 
     std::vector<T>& stitchRatio, int nm_offset, bool bothside = false)
@@ -406,6 +409,64 @@ void Add_stitching(int mesh_size, T uniform_stitching_ratio, std::vector<VECTOR<
             stitchRatio[2*i + 1] = uniform_stitching_ratio;
         }
 
+    }
+}
+
+
+
+// explicitly calculate the stitching line with known input mesh for virtual tryon 
+template <class T, int dim = 3>
+void Add_stitching_withbody(int mesh_size, T uniform_stitching_ratio, std::vector<VECTOR<int, 3>>& stitchNodes, 
+    std::vector<T>& stitchRatio, int nm_offset, MESH_ELEM<dim - 2>& Elem_smock)
+{
+    stitchNodes.resize(4 * (mesh_size - 1));
+    stitchRatio.resize(4 * (mesh_size - 1));
+    std::cout << "Size of the smocking elements: " << Elem_smock.size << std::endl;
+    int start_ind_l = 0;
+    int start_ind_r = mesh_size - 1;
+    std::vector<int> leftedge(mesh_size);
+    std::vector<int> rightedge(mesh_size);
+    for(int i = 0; i < mesh_size; i++){
+        int displacement_l = 0;
+        int displacement_r = 0;
+        int cur_l = start_ind_l + i * mesh_size;
+        int cur_r = start_ind_r + i * mesh_size;
+            for(int j = 0; j < Elem_smock.size; j++){
+                const VECTOR<int, dim-1>& smock_ind = std::get<0>(Elem_smock.Get_Unchecked(j));
+                if(cur_l > smock_ind[dim-2])
+                    displacement_l++;
+                if(cur_r > smock_ind[dim-2])
+                    displacement_r++;
+            }
+        cur_l -= displacement_l;
+        cur_r -= displacement_r;
+        std::cout << "Current displacement: Left:" << displacement_l << "Right: " << displacement_r << std::endl;
+        leftedge[i] = cur_l;
+        rightedge[i] = cur_r;
+    }
+
+    int start_ind_l_ = mesh_size * mesh_size - nm_offset;
+    int start_ind_r_ = mesh_size * mesh_size + mesh_size - 1 - nm_offset;
+    for(int i = 0; i < mesh_size-1; i++){
+        stitchNodes[4*i][0] = start_ind_l_ + i * mesh_size;
+        stitchNodes[4*i][1] = leftedge[i];
+        stitchNodes[4*i][2] = leftedge[i+1];
+        stitchRatio[4*i] = uniform_stitching_ratio;
+
+        stitchNodes[4*i + 1][0] = start_ind_l_ + (i + 1) * mesh_size;
+        stitchNodes[4*i + 1][1] = leftedge[i];
+        stitchNodes[4*i + 1][2] = leftedge[i+1];
+        stitchRatio[4*i + 1] = uniform_stitching_ratio;
+    
+        stitchNodes[4*i + 2][0] = start_ind_r_ + i * mesh_size;
+        stitchNodes[4*i + 2][1] = rightedge[i];
+        stitchNodes[4*i + 2][2] = rightedge[i+1];
+        stitchRatio[4*i + 2] = uniform_stitching_ratio;
+
+        stitchNodes[4*i + 3][0] = start_ind_r_ + (i + 1) * mesh_size;
+        stitchNodes[4*i + 3][1] = rightedge[i];
+        stitchNodes[4*i + 3][2] = rightedge[i+1];
+        stitchRatio[4*i + 3] = uniform_stitching_ratio;
     }
 }
 
@@ -1969,6 +2030,7 @@ void Export_Discrete_Shell(py::module& m) {
 
     shell_m.def("Add_Garment", &Add_Garment_3D<double>);
     shell_m.def("Add_Stitching", &Add_stitching<double>);
+    shell_m.def("Add_Stitching_witbody", &Add_stitching_withbody<double>);
     shell_m.def("vis_stitching", &vis_stitching<double>);
     shell_m.def("Add_Shell", &Add_Discrete_Shell_3D<double>);
     shell_m.def("Add_Shell_withSmock", &Add_Discrete_Shell_3D_withSmock<double>);

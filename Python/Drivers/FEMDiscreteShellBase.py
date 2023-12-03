@@ -21,6 +21,7 @@ class FEMDiscreteShellBase(SimulationBase):
         self.Elem = Storage.V2iStorage() if self.dim == 2 else Storage.V3iStorage()
         self.Elem_rest = Storage.V2iStorage() if self.dim == 2 else Storage.V3iStorage()
         self.Elem_smock = Storage.V2iStorage() if self.dim == 2 else Storage.V3iStorage()
+        self.Smock_pattern = Storage.V2iStorage()
         self.segs = StdVectorVector2i()
         self.outputSeg = False
         self.nodeAttr = Storage.V2dV2dV2dSdStorage() if self.dim == 2 else Storage.V3dV3dV3dSdStorage()
@@ -161,7 +162,7 @@ class FEMDiscreteShellBase(SimulationBase):
         return FEM.DiscreteShell.Add_Shell(filePath, translate, scale, rotCenter, rotAxis, rotDeg, self.X, self.Elem, self.compNodeRange)
     
     def add_shell_with_scale_3D_smock(self, filePath, filePath_smock, translate, scale, rotCenter, rotAxis, rotDeg):
-        return FEM.DiscreteShell.Add_Shell_withSmock(filePath, filePath_smock, translate, scale, rotCenter, rotAxis, rotDeg, self.X, self.Elem, self.compNodeRange)
+        return FEM.DiscreteShell.Add_Shell_withSmock(filePath, filePath_smock, translate, scale, rotCenter, rotAxis, rotDeg, self.X, self.Elem, self.compNodeRange, self.Smock_pattern)
     
     def add_garment_3D(self, filePath, translate, scale, rotCenter, rotAxis, rotDeg):
         FEM.DiscreteShell.Add_Garment(filePath, translate, scale, rotCenter, rotAxis, rotDeg, \
@@ -169,6 +170,11 @@ class FEMDiscreteShellBase(SimulationBase):
         
     def add_stitching(self, vis = False, both_sides = False):
         FEM.DiscreteShell.Add_Stitching(self.fine_mesh_res, self.uniform_stitching_ratio, self.stitchInfo, self.stitchRatio, self.smock_size, both_sides)
+        if vis:
+            FEM.DiscreteShell.vis_stitching(self.X, self.Elem, self.stitchInfo)
+
+    def add_stitching_withbody(self, vis = False):
+        FEM.DiscreteShell.Add_Stitching_witbody(self.fine_mesh_res, self.uniform_stitching_ratio, self.stitchInfo, self.stitchRatio, self.smock_size, self.Smock_pattern)
         if vis:
             FEM.DiscreteShell.vis_stitching(self.X, self.Elem, self.stitchInfo)
 
