@@ -30,16 +30,22 @@ if __name__ == "__main__":
     sim.PNTol = 2e-3
     
     # 1. add the smocking garment
-    sim.add_shell_with_scale_3D_smock("input/S4.obj","input/S1.obj", Vector3d(0, 0, -0.3), Vector3d(0.05, 0.05, 0.05),\
+    sim.add_shell_with_scale_3D_smock("input/S4.obj","input/S1.obj", Vector3d(0, 0, -0.3), Vector3d(0.045, 0.045, 0.045),\
         Vector3d(0, 0, 0), Vector3d(0, 0, 1), -90) # make sure the planar is orthogonal to the ground
 
     # 2. add the garment with identical size that to be sewed 
-    sim.add_shell_with_scale_3D("input/S3.obj", Vector3d(0, -0.2, -0.85), \
-        Vector3d(0.05, 0.05, 0.05),Vector3d(0, 0, 0), Vector3d(0, 0, 1), -90) 
+    sim.add_shell_with_scale_3D("input/S3.obj", Vector3d(0, 0.08, -0.85), #Vector3d(0, 0.2, -0.85)
+        Vector3d(0.035, 0.045, 0.045),Vector3d(0, 0, 0), Vector3d(0, 0, 1), -90) 
+    
+    sim.add_shell_with_scale_3D("input/S3.obj", Vector3d(-0.1, -0.78, -0.3), \
+        Vector3d(0.06, 0.055, 0.055),Vector3d(0, 0, 0), Vector3d(0, 0, 1), -90)
+    
+    sim.add_shell_with_scale_3D("input/S3.obj", Vector3d(-0.1, -0.78, -0.85), \
+        Vector3d(0.06, 0.055, 0.055),Vector3d(0, 0, 0), Vector3d(0, 0, 1), -90)
 
     # 3. add mannequin
-    meshCounter = sim.add_shell_with_scale_3D("input/wm2_15k.obj", Vector3d(0.5, -0.75, -0.5), \
-        Vector3d(2.5, 2.5, 2.5),Vector3d(0, 0, 0), Vector3d(1, 0, 0), -90) 
+    meshCounter = sim.add_shell_with_scale_3D("input/wm2_15k.obj", Vector3d(0.45, -0.70, -0.5), \
+        Vector3d(2.6, 2.6, 2.6),Vector3d(0, 0, 0), Vector3d(1, 0, 0), -90) 
     
     # print("The body BDC range:")
     sim.set_DBC_with_range(Vector3d(-0.1, -0.1, -0.1), Vector3d(1.1, 1.1, 1.1), 
@@ -64,6 +70,7 @@ if __name__ == "__main__":
     sim.uniform_stitching_ratio = 0.5
     sim.if_contact = False
     sim.gravity = Vector3d(0, 0, 0) # cancel this term after setting DBC
+    # sim.staticSolve = True
 
     # density, E, nu, thickness, initial displacement case
     if algI == 0:

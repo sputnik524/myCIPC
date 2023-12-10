@@ -1,0 +1,1 @@
+Init with smock mode!

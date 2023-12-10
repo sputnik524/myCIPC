@@ -419,8 +419,8 @@ template <class T, int dim = 3>
 void Add_stitching_withbody(int mesh_size, T uniform_stitching_ratio, std::vector<VECTOR<int, 3>>& stitchNodes, 
     std::vector<T>& stitchRatio, int nm_offset, MESH_ELEM<dim - 2>& Elem_smock)
 {
-    stitchNodes.resize(4 * (mesh_size - 1));
-    stitchRatio.resize(4 * (mesh_size - 1));
+    stitchNodes.resize(12 * (mesh_size - 1));
+    stitchRatio.resize(12 * (mesh_size - 1));
     std::cout << "Size of the smocking elements: " << Elem_smock.size << std::endl;
     int start_ind_l = 0;
     int start_ind_r = mesh_size - 1;
@@ -447,26 +447,70 @@ void Add_stitching_withbody(int mesh_size, T uniform_stitching_ratio, std::vecto
 
     int start_ind_l_ = mesh_size * mesh_size - nm_offset;
     int start_ind_r_ = mesh_size * mesh_size + mesh_size - 1 - nm_offset;
+    int start_ind_front = mesh_size * (mesh_size - 1) - nm_offset;
+    int offset = mesh_size * mesh_size;
+    int start_ind_back = mesh_size * (mesh_size - 1) - nm_offset + offset;
+
     for(int i = 0; i < mesh_size-1; i++){
-        stitchNodes[4*i][0] = start_ind_l_ + i * mesh_size;
-        stitchNodes[4*i][1] = leftedge[i];
-        stitchNodes[4*i][2] = leftedge[i+1];
-        stitchRatio[4*i] = uniform_stitching_ratio;
+        stitchNodes[12*i][0] = start_ind_l_ + i * mesh_size;
+        stitchNodes[12*i][1] = leftedge[i];
+        stitchNodes[12*i][2] = leftedge[i+1];
+        stitchRatio[12*i] = uniform_stitching_ratio;
 
-        stitchNodes[4*i + 1][0] = start_ind_l_ + (i + 1) * mesh_size;
-        stitchNodes[4*i + 1][1] = leftedge[i];
-        stitchNodes[4*i + 1][2] = leftedge[i+1];
-        stitchRatio[4*i + 1] = uniform_stitching_ratio;
+        stitchNodes[12*i + 1][0] = start_ind_l_ + (i + 1) * mesh_size;
+        stitchNodes[12*i + 1][1] = leftedge[i];
+        stitchNodes[12*i + 1][2] = leftedge[i+1];
+        stitchRatio[12*i + 1] = uniform_stitching_ratio;
     
-        stitchNodes[4*i + 2][0] = start_ind_r_ + i * mesh_size;
-        stitchNodes[4*i + 2][1] = rightedge[i];
-        stitchNodes[4*i + 2][2] = rightedge[i+1];
-        stitchRatio[4*i + 2] = uniform_stitching_ratio;
+        stitchNodes[12*i + 2][0] = start_ind_r_ + i * mesh_size;
+        stitchNodes[12*i + 2][1] = rightedge[i];
+        stitchNodes[12*i + 2][2] = rightedge[i+1];
+        stitchRatio[12*i + 2] = uniform_stitching_ratio;
 
-        stitchNodes[4*i + 3][0] = start_ind_r_ + (i + 1) * mesh_size;
-        stitchNodes[4*i + 3][1] = rightedge[i];
-        stitchNodes[4*i + 3][2] = rightedge[i+1];
-        stitchRatio[4*i + 3] = uniform_stitching_ratio;
+        stitchNodes[12*i + 3][0] = start_ind_r_ + (i + 1) * mesh_size;
+        stitchNodes[12*i + 3][1] = rightedge[i];
+        stitchNodes[12*i + 3][2] = rightedge[i+1];
+        stitchRatio[12*i + 3] = uniform_stitching_ratio;
+
+        stitchNodes[12*i + 4][0] = start_ind_front + i + mesh_size + offset;
+        stitchNodes[12*i + 4][1] = start_ind_front + i;
+        stitchNodes[12*i + 4][2] = start_ind_front + i + 1;
+        stitchRatio[12*i + 4] = uniform_stitching_ratio;
+
+        stitchNodes[12*i + 5][0] = start_ind_front + i + mesh_size + offset + 1;
+        stitchNodes[12*i + 5][1] = start_ind_front + i;
+        stitchNodes[12*i + 5][2] = start_ind_front + i + 1;
+        stitchRatio[12*i + 5] = uniform_stitching_ratio;
+
+        stitchNodes[12*i + 6][0] = start_ind_back + i + mesh_size + offset;
+        stitchNodes[12*i + 6][1] = start_ind_back + i;
+        stitchNodes[12*i + 6][2] = start_ind_back + i + 1;
+        stitchRatio[12*i + 6] = uniform_stitching_ratio;
+
+        stitchNodes[12*i + 7][0] = start_ind_back + i + mesh_size + offset + 1;
+        stitchNodes[12*i + 7][1] = start_ind_back + i;
+        stitchNodes[12*i + 7][2] = start_ind_back + i + 1;
+        stitchRatio[12*i + 7] = uniform_stitching_ratio;
+
+        stitchNodes[12*i + 8][0] = start_ind_l_ + i * mesh_size + 2 * offset;
+        stitchNodes[12*i + 8][1] = start_ind_l_ + i * mesh_size + offset;
+        stitchNodes[12*i + 8][2] = start_ind_l_ + (i + 1) * mesh_size + offset;
+        stitchRatio[12*i + 8] = uniform_stitching_ratio;
+
+        stitchNodes[12*i + 9][0] = start_ind_l_ + (i + 1) * mesh_size + 2 * offset;
+        stitchNodes[12*i + 9][1] = start_ind_l_ + i * mesh_size + offset;
+        stitchNodes[12*i + 9][2] = start_ind_l_ + (i + 1) * mesh_size + offset;
+        stitchRatio[12*i + 9] = uniform_stitching_ratio;
+
+        stitchNodes[12*i + 10][0] = start_ind_r_ + i * mesh_size + 2 * offset;
+        stitchNodes[12*i + 10][1] = start_ind_r_ + i * mesh_size + offset;
+        stitchNodes[12*i + 10][2] = start_ind_r_ + (i + 1) * mesh_size + offset;
+        stitchRatio[12*i + 10] = uniform_stitching_ratio;
+
+        stitchNodes[12*i + 11][0] = start_ind_r_ + (i + 1) * mesh_size + 2 * offset;
+        stitchNodes[12*i + 11][1] = start_ind_r_ + i * mesh_size + offset;
+        stitchNodes[12*i + 11][2] = start_ind_r_ + (i + 1) * mesh_size + offset;
+        stitchRatio[12*i + 11] = uniform_stitching_ratio;
     }
 }
 
