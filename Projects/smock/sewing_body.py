@@ -47,12 +47,13 @@ if __name__ == "__main__":
     meshCounter = sim.add_shell_with_scale_3D("input/wm2_15k.obj", Vector3d(0.45, -0.70, -0.5), \
         Vector3d(2.6, 2.6, 2.6),Vector3d(0, 0, 0), Vector3d(1, 0, 0), -90) 
     
-    # print("The body BDC range:")
+    # print("The body DBC range:")
     sim.set_DBC_with_range(Vector3d(-0.1, -0.1, -0.1), Vector3d(1.1, 1.1, 1.1), 
             Vector3d(0, 0.0, 0), Vector3d(0, 0, 0), Vector3d(0, 1, 0), 0, meshCounter)
     
     # sim.seqDBC = sim.compNodeRange[-1]
-    # sim.add_mannequin("input/wm2_15k.obj", Vector3d(0, 0, 0), Vector3d(1, 1, 1),\
+    # seqName = 'Kick'
+    # sim.add_mannequin("input/wm2_15k.obj", Vector3d(0.45, -0.70, -0.5), Vector3d(2.6, 2.6, 2.6),\
     #     Vector3d(0, 0, 0), Vector3d(1, 0, 0), -90)
     # sim.seqDBCPath = "input/" + seqName
     
@@ -69,7 +70,7 @@ if __name__ == "__main__":
     sim.smock_cons = 0.1
     sim.uniform_stitching_ratio = 0.5
     sim.if_contact = False
-    sim.gravity = Vector3d(0, 0, 0) # cancel this term after setting DBC
+    # sim.gravity = Vector3d(0, 0, 0) # cancel this term after setting DBC
     # sim.staticSolve = True
 
     # density, E, nu, thickness, initial displacement case
@@ -87,6 +88,8 @@ if __name__ == "__main__":
         sim.bendingStiffMult = bendEMult / membEMult
         sim.kappa_s = Vector2d(0, 0)
 
+    # sim.load_frame("input/dance_rest.obj") 
+    
     sim.initialize_OIPC(1e-3, 0)
 
     sim.run()
