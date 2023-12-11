@@ -172,12 +172,20 @@ void map_smock_pattern(MESH_ELEM<dim - 2>& Elem_smock)
     // int cols_f = cols_c * fine + 1;
     // int offset = 5 * rows_f + 5; 
 
-    int rows_c = 21; 
-    int cols_c = 21;
-    int fine = 5;
-    int rows_f = rows_c * fine + 1;
-    int cols_f = cols_c * fine + 1;
-    int offset = 2 * rows_f + 2;
+    // int rows_c = 21; 
+    // int cols_c = 21;
+    // int fine = 5;
+    // int rows_f = rows_c * fine + 1;
+    // int cols_f = cols_c * fine + 1;
+    // int offset = 2 * rows_f + 2;
+
+    int rows_c = 13; 
+    int cols_c = 13;
+    int fine = 10;
+    int rows_f = 130;
+    int cols_f = 130;
+    int offset = 6 + 130*6;
+   
 
     Elem_smock.Each([&](int id, auto data){
         auto &[elemVInd] = data;
@@ -1181,7 +1189,7 @@ T Initialize_Discrete_Shell_Smock(
         });
         filteredElem.deep_copy_to(Elem);
 
-        Write_TriMesh_Obj(X, Elem_smock, "visualize.obj");
+        
         MESH_ELEM<dim - 1> filteredElem_smock(Elem_smock.size);
         Elem_smock.Each([&](int id, auto data){
             auto &[elemVInd] = data;
@@ -1200,7 +1208,7 @@ T Initialize_Discrete_Shell_Smock(
             }
         });
         filteredElem_smock.deep_copy_to(Elem_smock);
-
+        Write_TriMesh_Obj(X, Elem_smock, "visualize.obj");
         std::cout << "NUmber of Filtered Smocking constraints: " << Elem_smock.size << std::endl;
 
         nodeAttr = MESH_NODE_ATTR<T, dim>(X.size);
