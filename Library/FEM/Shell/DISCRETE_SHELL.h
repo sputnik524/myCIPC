@@ -82,6 +82,7 @@ void non_manifold(MESH_NODE<T, dim>& X, MESH_ELEM<dim - 1>& Elem, MESH_ELEM<dim 
 
     // remove the disconnected nodes
     MESH_NODE<T, dim> rest_X(X.size);
+    // std::cout << "X size: " << X.size << std::endl;
     X.Each([&](int id, auto data){
         auto &[pos] = data;
         bool remove = false;
@@ -92,11 +93,12 @@ void non_manifold(MESH_NODE<T, dim>& X, MESH_ELEM<dim - 1>& Elem, MESH_ELEM<dim 
             if(id == smock_ind[0]){
                 subplace |= true;
                 subVec = 0.5*(pos + std::get<0>(X.Get_Unchecked(smock_ind[1]))); // TODO: Must satisfy hte index in smocking pattern is monotonic increasing
+                // std::cout << "Sub pos: " << subVec[0] << " " << subVec[1] << " " << subVec[2]<< std::endl;
             }
             
             else if(id == smock_ind[1]){
-                // double dist = (pos - std::get<0>(X.Get_Unchecked(smock_ind[0]))).norm();
-                // std::cout << "Removing id with Index: " << id << " with norm: " << dist << std::endl;
+                double dist = (pos - std::get<0>(X.Get_Unchecked(smock_ind[0]))).norm();
+                std::cout << "Removing id with Index: " << id << " with norm: " << dist << "from index: " << smock_ind[0] << std::endl;
                 remove |= true;
             }
         }
@@ -158,7 +160,7 @@ void non_manifold_elem(MESH_ELEM<dim - 1>& Elem, MESH_ELEM<dim - 2>& Elem_smock)
 
     Elem.Each([&](int id, auto data){
         auto &[elemVInd] = data;
-        std::cout << elemVInd[0] << " " << elemVInd[1] << " " << elemVInd[2] << std::endl;
+        // std::cout << elemVInd[0] << " " << elemVInd[1] << " " << elemVInd[2] << std::endl;
     });
 }
 
@@ -181,7 +183,7 @@ void map_smock_pattern(MESH_ELEM<dim - 2>& Elem_smock)
 
     int rows_c = 13; 
     int cols_c = 13;
-    int fine = 10;
+    int fine = 9; // TODO: speical treat
     int rows_f = 130;
     int cols_f = 130;
     int offset = 6 + 130*6;
@@ -193,7 +195,15 @@ void map_smock_pattern(MESH_ELEM<dim - 2>& Elem_smock)
         for(int i = 0; i < dim - 1; i++){
             int i_s = elemVInd[i] / cols_c;
             int j_s = elemVInd[i] % cols_c;
-            elemVInd[i] = (i_s * fine * rows_f + j_s * fine + offset);
+            // TODO: ##############Hardcode for web meshes!!!!######################
+            int offset_x = 0;
+            int offset_y = 0;
+            if(i_s > 6)
+                offset_x = 1;
+            if(j_s > 6)
+                offset_y = 1;
+                
+            elemVInd[i] = (i_s * fine * rows_f + j_s * fine + offset + offset_y + offset_x*rows_f);
         }
         // std::cout << "mapping smocking index: " << id << " to " <<  elemVInd[0] << " " << elemVInd[1] << std::endl;
     });
@@ -1187,6 +1197,7 @@ T Initialize_Discrete_Shell_Smock(
                 filteredElem.Append(elemVInd);
             }
         });
+        std::cout << "Number of unfiltered elems: " << Elem.size << ", NUmber of filtered: " << filteredElem.size << std::endl;
         filteredElem.deep_copy_to(Elem);
 
         

@@ -145,7 +145,8 @@ void Read_TriMesh_Obj_smock(const std::string& filePath, MESH_NODE<T, dim>& X, M
                     index = index * 10 + line[cnt] - '0';
                     cnt++;
                 }
-                smock(i) = index - 1;
+                // smock(i) = index - 1; // TODO: for different input index scheme!
+                smock(i) = index;
                 while (cnt < length && line[cnt] != ' ')
                     cnt++;
             }

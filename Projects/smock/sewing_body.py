@@ -33,7 +33,7 @@ if __name__ == "__main__":
     smock_sizes = [130,48,64,32]
     fine_mesh_res_ = [106,130,130,190]
     smock_names = ['','braid','twist', 'arrow']
-    smock_pattern_type = 2 # 0 for box, 1 for braid, 2 for twist, 3 for arrow
+    smock_pattern_type = 0 # 0 for box, 1 for braid, 2 for twist, 3 for arrow
     sim.smock_size = smock_sizes[smock_pattern_type]
     sim.fine_mesh_res = fine_mesh_res_[smock_pattern_type]
     smock_name = smock_names[smock_pattern_type]
@@ -67,7 +67,7 @@ if __name__ == "__main__":
     # sim.seqDBCPath = "input/" + seqName
     
     # 4. add sewing info
-    sim.add_stitching_withbody(vis=True)
+    sim.add_stitching_withbody()
 
     sim.muComp = StdVectorXd([0, 0, sim.mu,  0, 0, sim.mu,  sim.mu, sim.mu, 0.1])
 
@@ -101,4 +101,4 @@ if __name__ == "__main__":
     
     sim.initialize_OIPC(1e-3, 0)
 
-    # sim.run()
+    sim.run()
