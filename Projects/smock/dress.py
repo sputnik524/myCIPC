@@ -41,18 +41,18 @@ if __name__ == "__main__":
     ################################ Not using NH for not PSD in this case!!####################  
     
     # for web meshes, rot x-axis
-    sim.add_shell_with_scale_3D_smock("input/"+smock_name +"/S4.obj","input/"+smock_name +"/S1.obj", Vector3d(0.4, 0.55, -0.2), Vector3d(0.08, 0.08, 0.08),\
+    sim.add_shell_with_scale_3D_smock("input/"+smock_name +"/S4.obj","input/"+smock_name +"/S1.obj", Vector3d(0.4, 0.55, -0.2), Vector3d(0.06, 0.06, 0.06),\
         Vector3d(0, 0, 0), Vector3d(1, 0, 0), -90) 
 
     # 2. add the garment with identical size that to be sewed 
     sim.add_shell_with_scale_3D("input/"+smock_name +"/S3.obj", Vector3d(-0.0, 0.1, 0.5), #Vector3d(0, 0.2, -0.85)
-        Vector3d(0.06, 0.08, 0.06),Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0) 
+        Vector3d(0.06, 0.07, 0.06),Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0) 
     
     sim.add_shell_with_scale_3D("input/"+smock_name +"/S3.obj", Vector3d(1.0, 0, -0.2), \
-        Vector3d(0.10, 0.1, 0.1),Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0)
+        Vector3d(0.075, 0.075, 0.075),Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0)
     
     sim.add_shell_with_scale_3D("input/"+smock_name +"/S3.obj", Vector3d(1.0, 0, 0.5), \
-        Vector3d(0.10, 0.1, 0.1),Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0)
+        Vector3d(0.075, 0.075, 0.075),Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0)
 
     # 3. add mannequin
     meshCounter = sim.add_shell_with_scale_3D("input/woman_rot.obj", Vector3d(0.75, 0.6, 0.1), \
@@ -73,10 +73,10 @@ if __name__ == "__main__":
     sim.frame_num = 100
     sim.withCollision = True
     sim.smock = True
-    sim.smock_cons = 0.02
-    sim.uniform_stitching_ratio = 0.5
+    sim.smock_cons = 0.1
+    sim.uniform_stitching_ratio = 0.25
     sim.if_contact = False
-    # sim.gravity = Vector3d(9.81, 0, 0) # cancel this term after setting DBC
+    sim.gravity = Vector3d(9.81, 0, 0) # cancel this term after setting DBC
     # sim.staticSolve = True
 
     # density, E, nu, thickness, initial displacement case
