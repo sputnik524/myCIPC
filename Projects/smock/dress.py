@@ -30,10 +30,10 @@ if __name__ == "__main__":
     sim.PNTol = 2e-3
 
     # determine the smock pattern type
-    smock_sizes = [130,48,64,32]
-    fine_mesh_res_ = [106,130,130,190]
+    smock_sizes = [130,48,64,72]
+    fine_mesh_res_ = [106,130,130,130]
     smock_names = ['','braid','twist', 'arrow']
-    smock_pattern_type = 1 # 0 for box, 1 for braid, 2 for twist, 3 for arrow
+    smock_pattern_type = 3 # 0 for box, 1 for braid, 2 for twist, 3 for arrow
     sim.smock_size = smock_sizes[smock_pattern_type]
     sim.fine_mesh_res = fine_mesh_res_[smock_pattern_type]
     smock_name = smock_names[smock_pattern_type]
@@ -41,18 +41,18 @@ if __name__ == "__main__":
     ################################ Not using NH for not PSD in this case!!####################  
     
     # for web meshes, rot x-axis
-    sim.add_shell_with_scale_3D_smock("input/"+smock_name +"/S4.obj","input/"+smock_name +"/S1.obj", Vector3d(0.5, 0.50, -0.1), Vector3d(0.065, 0.065, 0.065),\
+    sim.add_shell_with_scale_3D_smock("input/"+smock_name +"/S4.obj","input/"+smock_name +"/S1.obj", Vector3d(0.5, 0.70, -0.1), Vector3d(0.065, 0.065, 0.065),\
         Vector3d(0, 0, 0), Vector3d(1, 0, 0), -90) 
 
     # 2. add the garment with identical size that to be sewed 
-    sim.add_shell_with_scale_3D("input/"+smock_name +"/S3.obj", Vector3d(0.1, 0.05, 0.5), #Vector3d(0, 0.2, -0.85)
-        Vector3d(0.055, 0.07, 0.055),Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0) 
+    sim.add_shell_with_scale_3D("input/"+smock_name +"/S3.obj", Vector3d(0.1, -0.2, 0.5), #Vector3d(0, 0.2, -0.85)
+        Vector3d(0.055, 0.09, 0.055),Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0) 
     
-    sim.add_shell_with_scale_3D("input/"+smock_name +"/S3.obj", Vector3d(1.0, 0, -0.1), \
-        Vector3d(0.075, 0.075, 0.075),Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0)
+    sim.add_shell_with_scale_3D("input/"+smock_name +"/S3.obj", Vector3d(1.0, 0.2, -0.1), \
+        Vector3d(0.07, 0.07, 0.07),Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0)
     
-    sim.add_shell_with_scale_3D("input/"+smock_name +"/S3.obj", Vector3d(1.0, 0, 0.5), \
-        Vector3d(0.075, 0.075, 0.075),Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0)
+    sim.add_shell_with_scale_3D("input/"+smock_name +"/S3.obj", Vector3d(1.0, -0.2, 0.5), \
+        Vector3d(0.07, 0.09, 0.07),Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0)
 
     # 3. add mannequin
     meshCounter = sim.add_shell_with_scale_3D("input/woman_rot.obj", Vector3d(0.75, 0.5, 0.12), \
@@ -68,13 +68,13 @@ if __name__ == "__main__":
 
     sim.muComp = StdVectorXd([0, 0, sim.mu,  0, 0, sim.mu,  sim.mu, sim.mu, 0.1])
 
-    sim.dt = 0.04
-    sim.frame_dt = 0.04
+    sim.dt = 0.005
+    sim.frame_dt = 0.005
     sim.frame_num = 100
     sim.withCollision = True
     sim.smock = True
     sim.smock_cons = 0.1
-    sim.uniform_stitching_ratio = 0.25
+    sim.uniform_stitching_ratio = 0.1
     sim.if_contact = False
     sim.gravity = Vector3d(9.81, 0, 0) # cancel this term after setting DBC
     # sim.staticSolve = True

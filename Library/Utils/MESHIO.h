@@ -80,7 +80,7 @@ VECTOR<int, 4> Read_TriMesh_Obj(const std::string& filePath,
 }
 
 template <class T, int dim>
-void Read_TriMesh_Obj_smock(const std::string& filePath, MESH_NODE<T, dim>& X, MESH_ELEM<2>& triangles, MESH_ELEM<1>& smock_pattern)
+void Read_TriMesh_Obj_smock(const std::string& filePath, MESH_NODE<T, dim>& X, MESH_ELEM<2>& triangles, MESH_ELEM<2>& smock_pattern)
 {
     std::ifstream is(filePath);
     if (!is.is_open()) {
@@ -91,7 +91,7 @@ void Read_TriMesh_Obj_smock(const std::string& filePath, MESH_NODE<T, dim>& X, M
     std::string line;
     VECTOR<T, dim> position;
     VECTOR<int, 3> tri;
-    VECTOR<int, 2> smock;
+    VECTOR<int, 3> smock;
     VECTOR<int, 4> counter(X.size, triangles.size, 0, 0);
     while (std::getline(is, line)) {
         std::stringstream ss(line);
@@ -134,7 +134,7 @@ void Read_TriMesh_Obj_smock(const std::string& filePath, MESH_NODE<T, dim>& X, M
                 triangles.Append(VECTOR<int, 3>(tri[0], tri[2], index - 1 + counter[0]));
             }
         }
-        else if (line[0] == 'l') {
+        else if (line[0] == 'l' && line[1] == ' ') {
             int cnt = 0;
             int length = line.size();
             for (int i = 0; i < 2; ++i) {
@@ -154,6 +154,7 @@ void Read_TriMesh_Obj_smock(const std::string& filePath, MESH_NODE<T, dim>& X, M
             for (int i = 0; i < 2; ++i) {
                 smock[i] += counter[0];
             }
+            smock[2] = -1;
             smock_pattern.Append(smock);
 
             while (cnt < length && (line[cnt] < '0' || line[cnt] > '9'))
@@ -166,6 +167,39 @@ void Read_TriMesh_Obj_smock(const std::string& filePath, MESH_NODE<T, dim>& X, M
                     cnt++;
                 }
                 // smock_pattern.Append(VECTOR<int, 3>(tri[0], tri[2], index - 1 + counter[0]));
+            }
+        }
+
+        else if (line[0] == 'l' && line[1] == 't' ) {
+            int cnt = 0;
+            int length = line.size();
+            for (int i = 0; i < 3; ++i) {
+                while (cnt < length && (line[cnt] < '0' || line[cnt] > '9'))
+                    cnt++;
+                int index = 0;
+                while (cnt < length && '0' <= line[cnt] && line[cnt] <= '9') {
+                    index = index * 10 + line[cnt] - '0';
+                    cnt++;
+                }
+                // smock(i) = index - 1; // TODO: for different input index scheme!
+                smock(i) = index;
+                while (cnt < length && line[cnt] != ' ')
+                    cnt++;
+            }
+
+            for (int i = 0; i < 3; ++i) {
+                smock[i] += counter[0];
+            }
+            smock_pattern.Append(smock);
+
+            while (cnt < length && (line[cnt] < '0' || line[cnt] > '9'))
+                cnt++;
+            if (cnt < length) {
+                int index = 0;
+                while (cnt < length && '0' <= line[cnt] && line[cnt] <= '9') {
+                    index = index * 10 + line[cnt] - '0';
+                    cnt++;
+                }
             }
         }
     }

@@ -21,7 +21,7 @@ class FEMDiscreteShellBase(SimulationBase):
         self.Elem = Storage.V2iStorage() if self.dim == 2 else Storage.V3iStorage()
         self.Elem_rest = Storage.V2iStorage() if self.dim == 2 else Storage.V3iStorage()
         self.Elem_smock = Storage.V2iStorage() if self.dim == 2 else Storage.V3iStorage()
-        self.Smock_pattern = Storage.V2iStorage()
+        self.Smock_pattern = Storage.V3iStorage()
         self.segs = StdVectorVector2i()
         self.outputSeg = False
         self.nodeAttr = Storage.V2dV2dV2dSdStorage() if self.dim == 2 else Storage.V3dV3dV3dSdStorage()

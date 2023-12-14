@@ -65,14 +65,18 @@ VECTOR<int, 4> Add_Discrete_Shell_3D(
 
 
 template <class T, int dim = 3>
-void non_manifold(MESH_NODE<T, dim>& X, MESH_ELEM<dim - 1>& Elem, MESH_ELEM<dim - 2>& Elem_smock)
+void non_manifold(MESH_NODE<T, dim>& X, MESH_ELEM<dim - 1>& Elem, MESH_ELEM<dim - 1>& Elem_smock)
 {
     Elem.Each([&](int id, auto data){
         auto &[elemVInd] = data;
         for(int i = 0; i < Elem_smock.size; i++){
-            const VECTOR<int, dim-1>& smock_ind = std::get<0>(Elem_smock.Get_Unchecked(i));
+            const VECTOR<int, 3>& smock_ind = std::get<0>(Elem_smock.Get_Unchecked(i));
             for(int j = 0; j < dim; j++){
-                if(elemVInd[j] == smock_ind[dim-2]){
+                if(elemVInd[j] == smock_ind[1]){
+                    // std::cout << "merging " << id <<"th tri : " << elemVInd[0] << elemVInd[1] << elemVInd[2]<< std::endl;
+                    elemVInd[j] = smock_ind[0]; // non-manifold with the first node on each smocking line
+                }
+                else if(elemVInd[j] == smock_ind[2]){
                     // std::cout << "merging " << id <<"th tri : " << elemVInd[0] << elemVInd[1] << elemVInd[2]<< std::endl;
                     elemVInd[j] = smock_ind[0]; // non-manifold with the first node on each smocking line
                 }
@@ -89,14 +93,21 @@ void non_manifold(MESH_NODE<T, dim>& X, MESH_ELEM<dim - 1>& Elem, MESH_ELEM<dim 
         bool subplace = false;
         VECTOR<T, dim> subVec;
         for(int i = 0; i < Elem_smock.size; i++){
-            const VECTOR<int, dim-1>& smock_ind = std::get<0>(Elem_smock.Get_Unchecked(i));
+            const VECTOR<int, 3>& smock_ind = std::get<0>(Elem_smock.Get_Unchecked(i));
             if(id == smock_ind[0]){
                 subplace |= true;
                 subVec = 0.5*(pos + std::get<0>(X.Get_Unchecked(smock_ind[1]))); // TODO: Must satisfy hte index in smocking pattern is monotonic increasing
-                // std::cout << "Sub pos: " << subVec[0] << " " << subVec[1] << " " << subVec[2]<< std::endl;
+                if(smock_ind[2] >= 0)
+                    subVec = (pos + std::get<0>(X.Get_Unchecked(smock_ind[1])) + std::get<0>(X.Get_Unchecked(smock_ind[2])))/3.0;
             }
             
             else if(id == smock_ind[1]){
+                double dist = (pos - std::get<0>(X.Get_Unchecked(smock_ind[0]))).norm();
+                std::cout << "Removing id with Index: " << id << " with norm: " << dist << "from index: " << smock_ind[0] << std::endl;
+                remove |= true;
+            }
+
+            else if(id == smock_ind[2]){
                 double dist = (pos - std::get<0>(X.Get_Unchecked(smock_ind[0]))).norm();
                 std::cout << "Removing id with Index: " << id << " with norm: " << dist << "from index: " << smock_ind[0] << std::endl;
                 remove |= true;
@@ -118,8 +129,11 @@ void non_manifold(MESH_NODE<T, dim>& X, MESH_ELEM<dim - 1>& Elem, MESH_ELEM<dim 
         for(int j = 0; j < dim; j++){
             int displacement_ = 0;
             for(int i = 0; i < Elem_smock.size; i++){
-                const VECTOR<int, dim-1>& smock_ind = std::get<0>(Elem_smock.Get_Unchecked(i));
-                if(elemVInd[j] > smock_ind[dim-2]){
+                const VECTOR<int, 3>& smock_ind = std::get<0>(Elem_smock.Get_Unchecked(i));
+                if(elemVInd[j] > smock_ind[1]){
+                    displacement_++;
+                }
+                if(elemVInd[j] > smock_ind[2] && smock_ind[2] > 0){
                     displacement_++;
                 }
             }
@@ -130,15 +144,18 @@ void non_manifold(MESH_NODE<T, dim>& X, MESH_ELEM<dim - 1>& Elem, MESH_ELEM<dim 
 }
 
 template <class T, int dim = 3>
-void non_manifold_elem(MESH_ELEM<dim - 1>& Elem, MESH_ELEM<dim - 2>& Elem_smock){
+void non_manifold_elem(MESH_ELEM<dim - 1>& Elem, MESH_ELEM<dim - 1>& Elem_smock){
     
     Elem.Each([&](int id, auto data){
         auto &[elemVInd] = data;
         for(int i = 0; i < Elem_smock.size; i++){
-            const VECTOR<int, dim-1>& smock_ind = std::get<0>(Elem_smock.Get_Unchecked(i));
+            const VECTOR<int, 3>& smock_ind = std::get<0>(Elem_smock.Get_Unchecked(i));
             for(int j = 0; j < dim; j++){
-                if(elemVInd[j] == smock_ind[dim-2]){
+                if(elemVInd[j] == smock_ind[1]){
                     elemVInd[j] = smock_ind[0]; 
+                }
+                else if(elemVInd[j] == smock_ind[2]){
+                    elemVInd[j] = smock_ind[0];
                 }
             }
         }
@@ -149,8 +166,11 @@ void non_manifold_elem(MESH_ELEM<dim - 1>& Elem, MESH_ELEM<dim - 2>& Elem_smock)
         for(int j = 0; j < dim; j++){
             int displacement_ = 0;
             for(int i = 0; i < Elem_smock.size; i++){
-                const VECTOR<int, dim-1>& smock_ind = std::get<0>(Elem_smock.Get_Unchecked(i));
-                if(elemVInd[j] > smock_ind[dim-2]){
+                const VECTOR<int, 3>& smock_ind = std::get<0>(Elem_smock.Get_Unchecked(i));
+                if(elemVInd[j] > smock_ind[1]){
+                    displacement_++;
+                }
+                if(elemVInd[j] > smock_ind[2] && smock_ind[2] > 0){
                     displacement_++;
                 }
             }
@@ -165,7 +185,7 @@ void non_manifold_elem(MESH_ELEM<dim - 1>& Elem, MESH_ELEM<dim - 2>& Elem_smock)
 }
 
 template <int dim = 3>
-void map_smock_pattern(MESH_ELEM<dim - 2>& Elem_smock)
+void map_smock_pattern(MESH_ELEM<dim - 1>& Elem_smock)
 {
     // int rows_c = 10; // TODO: use default S2 smock pattern with 10*10 resolution and default S4 10-times fine resolution
     // int cols_c = 10;
@@ -192,18 +212,20 @@ void map_smock_pattern(MESH_ELEM<dim - 2>& Elem_smock)
     Elem_smock.Each([&](int id, auto data){
         auto &[elemVInd] = data;
         // std::cout << "mapping smocking index: " << id << " from " <<  elemVInd[0] << " " << elemVInd[1] << std::endl;
-        for(int i = 0; i < dim - 1; i++){
-            int i_s = elemVInd[i] / cols_c;
-            int j_s = elemVInd[i] % cols_c;
-            // TODO: ##############Hardcode for web meshes!!!!######################
-            int offset_x = 0;
-            int offset_y = 0;
-            if(i_s > 6)
-                offset_x = 1;
-            if(j_s > 6)
-                offset_y = 1;
-                
-            elemVInd[i] = (i_s * fine * rows_f + j_s * fine + offset + offset_y + offset_x*rows_f);
+        for(int i = 0; i < 3; i++){
+            if(elemVInd[i] >= 0){
+                int i_s = elemVInd[i] / cols_c;
+                int j_s = elemVInd[i] % cols_c;
+                // TODO: ##############Hardcode for web meshes!!!!######################
+                int offset_x = 0;
+                int offset_y = 0;
+                if(i_s > 6)
+                    offset_x = 1;
+                if(j_s > 6)
+                    offset_y = 1;
+                    
+                elemVInd[i] = (i_s * fine * rows_f + j_s * fine + offset + offset_y + offset_x*rows_f);
+            }
         }
         // std::cout << "mapping smocking index: " << id << " to " <<  elemVInd[0] << " " << elemVInd[1] << std::endl;
     });
@@ -221,13 +243,13 @@ VECTOR<int, 4> Add_Discrete_Shell_3D_withSmock(
     MESH_NODE<T, dim>& X, // mid-surface node coordinates
     MESH_ELEM<dim - 1>& Elem, // the mid-surface triangles
     std::vector<int>& compNodeRange,
-    MESH_ELEM<dim - 2>& Smock_pattern)
+    MESH_ELEM<dim - 1>& Smock_pattern)
 {
     MESH_NODE<T, dim> newX;
     MESH_ELEM<dim - 1> newElem;
     MESH_NODE<T, dim> smockX;
     MESH_ELEM<dim - 1> smockElem;
-    MESH_ELEM<dim - 2> smock_pattern;
+    MESH_ELEM<dim - 1> smock_pattern;
     VECTOR<int, 4> counter = Read_TriMesh_Obj(filePath, newX, newElem);
     Read_TriMesh_Obj_smock(filePath_smock_pattern, smockX, smockElem, smock_pattern);
 
@@ -282,7 +304,7 @@ void override_Shell_3D_withSmock(
 
     MESH_NODE<T, dim> smockX;
     MESH_ELEM<dim - 1> smockElem;
-    MESH_ELEM<dim - 2> smock_pattern;
+    MESH_ELEM<dim - 1> smock_pattern;
     VECTOR<int, 4> counter = Read_TriMesh_Obj(filePath, newX, newElem);
     Read_TriMesh_Obj_smock(filePath_smock_pattern, smockX, smockElem, smock_pattern);
 
@@ -301,12 +323,12 @@ void Add_Smock_Constraint( // Load S2 as constraints
     MESH_ELEM<dim - 1> newElem;
     MESH_NODE<T, dim> smockX;
     MESH_ELEM<dim - 1> smockElem;
-    MESH_ELEM<dim - 2> smock_pattern;
+    MESH_ELEM<dim - 1> smock_pattern;
     VECTOR<int, 4> counter = Read_TriMesh_Obj(filePath, newX, newElem);
     Read_TriMesh_Obj_smock(filePath_smock_pattern, smockX, smockElem, smock_pattern);
 
     map_smock_pattern<dim>(smock_pattern);
-    map_smock_pattern<dim+1>(newElem);
+    map_smock_pattern<dim>(newElem);
 
     non_manifold_elem<T,dim>(newElem, smock_pattern);
 
@@ -435,7 +457,7 @@ void Add_stitching(int mesh_size, T uniform_stitching_ratio, std::vector<VECTOR<
 // explicitly calculate the stitching line with known input mesh for virtual tryon 
 template <class T, int dim = 3>
 void Add_stitching_withbody(int mesh_size, T uniform_stitching_ratio, std::vector<VECTOR<int, 3>>& stitchNodes, 
-    std::vector<T>& stitchRatio, int nm_offset, MESH_ELEM<dim - 2>& Elem_smock)
+    std::vector<T>& stitchRatio, int nm_offset, MESH_ELEM<dim - 1>& Elem_smock)
 {
     stitchNodes.resize(12 * (mesh_size - 1));
     stitchRatio.resize(12 * (mesh_size - 1));
@@ -450,10 +472,14 @@ void Add_stitching_withbody(int mesh_size, T uniform_stitching_ratio, std::vecto
         int cur_l = start_ind_l + i * mesh_size;
         int cur_r = start_ind_r + i * mesh_size;
             for(int j = 0; j < Elem_smock.size; j++){
-                const VECTOR<int, dim-1>& smock_ind = std::get<0>(Elem_smock.Get_Unchecked(j));
+                const VECTOR<int, dim>& smock_ind = std::get<0>(Elem_smock.Get_Unchecked(j));
                 if(cur_l > smock_ind[dim-2])
                     displacement_l++;
+                if(cur_l > smock_ind[dim-1] && smock_ind[dim-1] >= 0)
+                    displacement_l++;
                 if(cur_r > smock_ind[dim-2])
+                    displacement_r++;
+                if(cur_r > smock_ind[dim-1] && smock_ind[dim-1] >= 0)
                     displacement_r++;
             }
         cur_l -= displacement_l;
@@ -1183,6 +1209,7 @@ T Initialize_Discrete_Shell_Smock(
         MESH_ELEM<dim - 1> filteredElem(Elem.size);
         Elem.Each([&](int id, auto data){
             auto &[elemVInd] = data;
+            std::cout << "Elem id: " << id << "with elems: " << elemVInd[0] << " " << elemVInd[1] << " "<< elemVInd[2] << std::endl;
             const VECTOR<T, dim>& X1 = std::get<0>(X.Get_Unchecked(elemVInd[0]));
             const VECTOR<T, dim>& X2 = std::get<0>(X.Get_Unchecked(elemVInd[1]));
             const VECTOR<T, dim>& X3 = std::get<0>(X.Get_Unchecked(elemVInd[2]));
