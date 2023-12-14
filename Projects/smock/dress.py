@@ -33,7 +33,7 @@ if __name__ == "__main__":
     smock_sizes = [130,48,64,32]
     fine_mesh_res_ = [106,130,130,190]
     smock_names = ['','braid','twist', 'arrow']
-    smock_pattern_type = 2 # 0 for box, 1 for braid, 2 for twist, 3 for arrow
+    smock_pattern_type = 1 # 0 for box, 1 for braid, 2 for twist, 3 for arrow
     sim.smock_size = smock_sizes[smock_pattern_type]
     sim.fine_mesh_res = fine_mesh_res_[smock_pattern_type]
     smock_name = smock_names[smock_pattern_type]
@@ -41,22 +41,22 @@ if __name__ == "__main__":
     ################################ Not using NH for not PSD in this case!!####################  
     
     # for web meshes, rot x-axis
-    sim.add_shell_with_scale_3D_smock("input/"+smock_name +"/S4.obj","input/"+smock_name +"/S1.obj", Vector3d(0.4, 0.55, -0.2), Vector3d(0.06, 0.06, 0.06),\
+    sim.add_shell_with_scale_3D_smock("input/"+smock_name +"/S4.obj","input/"+smock_name +"/S1.obj", Vector3d(0.5, 0.50, -0.1), Vector3d(0.065, 0.065, 0.065),\
         Vector3d(0, 0, 0), Vector3d(1, 0, 0), -90) 
 
     # 2. add the garment with identical size that to be sewed 
-    sim.add_shell_with_scale_3D("input/"+smock_name +"/S3.obj", Vector3d(-0.0, 0.1, 0.5), #Vector3d(0, 0.2, -0.85)
-        Vector3d(0.06, 0.07, 0.06),Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0) 
+    sim.add_shell_with_scale_3D("input/"+smock_name +"/S3.obj", Vector3d(0.1, 0.05, 0.5), #Vector3d(0, 0.2, -0.85)
+        Vector3d(0.055, 0.07, 0.055),Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0) 
     
-    sim.add_shell_with_scale_3D("input/"+smock_name +"/S3.obj", Vector3d(1.0, 0, -0.2), \
+    sim.add_shell_with_scale_3D("input/"+smock_name +"/S3.obj", Vector3d(1.0, 0, -0.1), \
         Vector3d(0.075, 0.075, 0.075),Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0)
     
     sim.add_shell_with_scale_3D("input/"+smock_name +"/S3.obj", Vector3d(1.0, 0, 0.5), \
         Vector3d(0.075, 0.075, 0.075),Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0)
 
     # 3. add mannequin
-    meshCounter = sim.add_shell_with_scale_3D("input/woman_rot.obj", Vector3d(0.75, 0.6, 0.1), \
-        Vector3d(2.8, 2.8, 2.8),Vector3d(0, 0, 0), Vector3d(1, 0, 0), 180) 
+    meshCounter = sim.add_shell_with_scale_3D("input/woman_rot.obj", Vector3d(0.75, 0.5, 0.12), \
+        Vector3d(2.7, 2.7, 2.7),Vector3d(0, 0, 0), Vector3d(1, 0, 0), 180) 
     
     # print("The body DBC range:")
     sim.set_DBC_with_range(Vector3d(-0.1, -0.1, -0.1), Vector3d(1.1, 1.1, 1.1), 
