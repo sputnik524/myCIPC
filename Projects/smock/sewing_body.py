@@ -54,7 +54,7 @@ if __name__ == "__main__":
 
     # 3. add mannequin
     meshCounter = sim.add_shell_with_scale_3D("input/wm2_15k.obj", Vector3d(0.45, -0.70, -0.5), \
-        Vector3d(2.6, 2.6, 2.6),Vector3d(0, 0, 0), Vector3d(1, 0, 0), -90) 
+        Vector3d(2.6, 2.6, 2.6),Vector3d(0, 0, 0), Vector3d(1, 0, 0), -45) 
     
     # print("The body DBC range:")
     sim.set_DBC_with_range(Vector3d(-0.1, -0.1, -0.1), Vector3d(1.1, 1.1, 1.1), 

@@ -1209,7 +1209,7 @@ T Initialize_Discrete_Shell_Smock(
         MESH_ELEM<dim - 1> filteredElem(Elem.size);
         Elem.Each([&](int id, auto data){
             auto &[elemVInd] = data;
-            std::cout << "Elem id: " << id << "with elems: " << elemVInd[0] << " " << elemVInd[1] << " "<< elemVInd[2] << std::endl;
+            // std::cout << "Elem id: " << id << "with elems: " << elemVInd[0] << " " << elemVInd[1] << " "<< elemVInd[2] << std::endl;
             const VECTOR<T, dim>& X1 = std::get<0>(X.Get_Unchecked(elemVInd[0]));
             const VECTOR<T, dim>& X2 = std::get<0>(X.Get_Unchecked(elemVInd[1]));
             const VECTOR<T, dim>& X3 = std::get<0>(X.Get_Unchecked(elemVInd[2]));
