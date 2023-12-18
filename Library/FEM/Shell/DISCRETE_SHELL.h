@@ -616,8 +616,8 @@ void offset_smocking(MESH_NODE<T, dim>& X, std::vector<VECTOR<int, 3>>& stitchNo
     for(int i = 0; i < stitchNodes.size(); i++){
         VECTOR<T, dim>& X1 = std::get<0>(X.Get_Unchecked(stitchNodes[i][0]));
         VECTOR<T, dim>& X2 = std::get<0>(X.Get_Unchecked(stitchNodes[i][1]));
-        X1[1] -= 0.001;
-        X2[1] -= 0.001;
+        X1[1] -= 0.005;
+        X2[1] -= 0.005;
         std::cout << "after smocking: " << X1[0] << X1[1] << X1[2] << std::endl;
     }
 }
@@ -1344,8 +1344,9 @@ T Initialize_Discrete_Shell_Smock(
                 IB(0, 0) = E01.length2();
                 IB(1, 0) = IB(0, 1) = E01.dot(E02);
                 IB(1, 1) = E02.length2();
-                if(IB.determinant() != 0) {
+                if(abs(IB.determinant()) > 1e-20) {
                     std::cout << "IB info with id: " << id << std::endl;
+                    std::cout << "IB det: " << IB.determinant() << std::endl;
                     std::cout << "IB00: " << IB(0, 0) << std::endl;
                     std::cout << "IB10, IB01: " << IB(1, 0) << std::endl;
                     std::cout << "IB11: " << IB(1, 1) << std::endl;

@@ -18,16 +18,16 @@ if __name__ == "__main__":
     if len(sys.argv) > 3:
         size = sys.argv[3]
     
-    membEMult = 1.0
+    membEMult = 0.5
     if len(sys.argv) > 4:
         membEMult = float(sys.argv[4])
     
-    bendEMult = 100
+    bendEMult = 5.0
     if len(sys.argv) > 5:
         bendEMult = float(sys.argv[5])
 
     sim.mu = 0.0
-    sim.PNTol = 2e-3
+    sim.PNTol = 5e-4
 
     # determine the smock pattern type
     smock_sizes = [130,48,64,32]
@@ -47,16 +47,16 @@ if __name__ == "__main__":
     sim.muComp = StdVectorXd([0, 0, sim.mu,  0, 0, sim.mu,  sim.mu, sim.mu, 0.1])
 
     sim.dt = 0.01
-    sim.k_stitch = 1000
+    sim.k_stitch = 100000
     sim.frame_dt = 0.01
     sim.frame_num = 100
     sim.withCollision = True
     sim.smock = True
-    sim.smock_cons = 0.01
+    sim.smock_cons = 0.05
     sim.uniform_stitching_ratio = 1.0
     sim.if_contact = False
     sim.gravity = Vector3d(0, 0, 0) 
-    # sim.staticSolve = True
+    sim.staticSolve = True
     sim.use_s2 = True
     
     # Rescale S2!
