@@ -347,6 +347,41 @@ void Add_Smock_Constraint( // Load S2 as constraints
 }
 
 template <class T, int dim = 3>
+void Add_Smocking_Constraint(
+    const std::string& filePath,
+    const std::string& filePath_smock_pattern, MESH_NODE<T, dim>& X_Smocking,
+    MESH_ELEM<dim - 1>& SmockElem, MESH_ELEM<dim - 1>& SmockElem_unmapped, int& smock_size, 
+    T uniform_stitching_ratio, std::vector<VECTOR<int, 3>>& stitchNodes, 
+    std::vector<T>& stitchRatio){
+
+    MESH_NODE<T, dim> newX;
+    MESH_ELEM<dim - 1> newElem;
+    MESH_NODE<T, dim> smockX;
+    MESH_ELEM<dim - 1> smockElem;
+    MESH_ELEM<dim - 1> smock_pattern;
+    VECTOR<int, 4> counter = Read_TriMesh_Obj(filePath, newX, newElem);
+    Read_TriMesh_Obj_smock(filePath_smock_pattern, smockX, smockElem, smock_pattern);
+    Append_Attribute(newElem, SmockElem_unmapped);
+
+    map_smock_pattern<dim>(smock_pattern);
+    map_smock_pattern<dim>(newElem);
+    Append_Attribute(newElem, SmockElem);
+    Append_Attribute(newX, X_Smocking);
+    std::cout << "The size of the smocking constraint: " << smock_pattern.size << std::endl; 
+
+    // add stitching info according to the smock_pattern
+    stitchNodes.resize(smock_pattern.size);
+    stitchRatio.resize(smock_pattern.size);
+    smock_pattern.Each([&](int id, auto data){
+        auto &[elemVInd] = data;
+        stitchNodes[id][0] = elemVInd[0];
+        stitchNodes[id][1] = elemVInd[1];
+        stitchNodes[id][2] = elemVInd[1];
+        stitchRatio[id] = uniform_stitching_ratio;
+    });
+}
+
+template <class T, int dim = 3>
 void Add_Garment_3D(
     const std::string& filePath,
     const VECTOR<T, dim>& trans,
@@ -562,6 +597,7 @@ template <class T, int dim = 3>
 void vis_stitching(MESH_NODE<T, dim>& X, MESH_ELEM<dim - 1>& Elem, std::vector<VECTOR<int, 3>>& stitchNodes){
     MESH_ELEM<dim - 1> newElem;
     VECTOR<int, 3> tri;
+    std::cout << "The size of the stitching: " << stitchNodes.size() << std::endl;
     for(int i = 0; i < stitchNodes.size(); i++){
         tri(0) = stitchNodes[i][0];
         tri(1) = stitchNodes[i][1];
@@ -919,6 +955,7 @@ void Compute_Discrete_Shell_Inv_Basis_NM(
 template <class T, int dim, bool KL>
 void Compute_Discrete_Shell_Inv_Basis_Smock(
     MESH_NODE<T, dim>& X,
+    MESH_NODE<T, dim>& X_smock,
     MESH_ELEM<dim - 1>& Elem,
     MESH_ELEM<dim - 1>& Elem_smock,
     const std::map<std::pair<int, int>, int>& edge2tri,
@@ -926,7 +963,7 @@ void Compute_Discrete_Shell_Inv_Basis_Smock(
     std::vector<VECTOR<int, 4>>& edgeStencil,
     std::vector<VECTOR<T, 3>>& edgeInfo,
     MESH_ELEM_ATTR<T, dim - 1>& elemAttr,
-    MESH_ELEM_ATTR<T, dim - 1>& elemAttr_smock)
+    MESH_ELEM_ATTR<T, dim - 1>& elemAttr_smock, bool use_S2)
 {
     if constexpr (dim == 2) {
         //TODO
@@ -969,24 +1006,47 @@ void Compute_Discrete_Shell_Inv_Basis_Smock(
 
         Elem_smock.Each([&](int id, auto data) {
             auto &[elemVInd] = data;
-            const VECTOR<T, dim>& X1 = std::get<0>(X.Get_Unchecked(elemVInd[0]));
-            const VECTOR<T, dim>& X2 = std::get<0>(X.Get_Unchecked(elemVInd[1]));
-            const VECTOR<T, dim>& X3 = std::get<0>(X.Get_Unchecked(elemVInd[2]));
+            MATRIX<T, dim - 1> IB;
+            if(!use_S2)
+            {    
+                const VECTOR<T, dim>& X1 = std::get<0>(X.Get_Unchecked(elemVInd[0]));
+                const VECTOR<T, dim>& X2 = std::get<0>(X.Get_Unchecked(elemVInd[1]));
+                const VECTOR<T, dim>& X3 = std::get<0>(X.Get_Unchecked(elemVInd[2]));
+                const VECTOR<T, dim> E01 = X2 - X1;
+                const VECTOR<T, dim> E02 = X3 - X1;
+                IB(0, 0) = E01.length2();
+                IB(1, 0) = IB(0, 1) = E01.dot(E02);
+                IB(1, 1) = E02.length2();
+            }
+            else
+            {
+                const VECTOR<T, dim>& X1 = std::get<0>(X_smock.Get_Unchecked(elemVInd[0]));
+                const VECTOR<T, dim>& X2 = std::get<0>(X_smock.Get_Unchecked(elemVInd[1]));
+                const VECTOR<T, dim>& X3 = std::get<0>(X_smock.Get_Unchecked(elemVInd[2]));
+                const VECTOR<T, dim> E01 = X2 - X1;
+                const VECTOR<T, dim> E02 = X3 - X1;
+                IB(0, 0) = E01.length2();
+                IB(1, 0) = IB(0, 1) = E01.dot(E02);
+                IB(1, 1) = E02.length2();
+            }
 
-            const VECTOR<T, dim> E01 = X2 - X1;
-            const VECTOR<T, dim> E02 = X3 - X1;
-            MATRIX<T, dim - 1> IB; // for first fundamental form
-            IB(0, 0) = E01.length2();
-            IB(1, 0) = IB(0, 1) = E01.dot(E02);
-            IB(1, 1) = E02.length2();
+            // const VECTOR<T, dim> E01 = X2 - X1;
+            // const VECTOR<T, dim> E02 = X3 - X1;
+            // MATRIX<T, dim - 1> IB; // for first fundamental form
+            // IB(0, 0) = E01.length2();
+            // IB(1, 0) = IB(0, 1) = E01.dot(E02);
+            // IB(1, 1) = E02.length2();
             // IB.invert();
 
             Eigen::Matrix<T, dim, 1> cNormal;
             Eigen::Matrix<T, dim, 1> oppNormals[3];
             T mnorms[3];
             MATRIX<T, dim - 1> D; // for second fundamental form
-            Compute_SFF(X, Elem_smock, edge2tri_smock, id, cNormal, oppNormals, mnorms, D);
-            
+            if(!use_S2)
+                Compute_SFF(X, Elem_smock, edge2tri_smock, id, cNormal, oppNormals, mnorms, D);
+            else
+                Compute_SFF(X_smock, Elem_smock, edge2tri_smock, id, cNormal, oppNormals, mnorms, D);
+
             elemAttr_smock.Append(IB, D);
         });
 
@@ -1186,8 +1246,10 @@ template <class T, int dim, bool KL, bool elasticIPC>
 T Initialize_Discrete_Shell_Smock(
     T rho0, T E, T nu, T thickness, T h, T dHat2,
     MESH_NODE<T, dim>& X, // mid-surface node coordinates
+    MESH_NODE<T, dim>& X_smock,
     MESH_ELEM<dim - 1>& Elem,
     MESH_ELEM<dim - 1>& Elem_smock,
+    MESH_ELEM<dim - 1>& Elem_smock_unmapped,
     std::vector<VECTOR<int, 2>>& seg,
     std::map<std::pair<int, int>, int>& edge2tri,
     std::vector<VECTOR<int, 4>>& edgeStencil,
@@ -1200,7 +1262,7 @@ T Initialize_Discrete_Shell_Smock(
     MESH_ELEM_ATTR<T, dim - 1>& elemAttr_smock,
     FIXED_COROTATED<T, dim - 1>& elasticityAttr,
     FIXED_COROTATED<T, dim - 1>& elasticityAttr_smock,
-    VECTOR<T, 3>& kappa, T smock_cons)
+    VECTOR<T, 3>& kappa, T smock_cons, bool use_S2 = false)
 {
     if constexpr (dim == 2) {
         //TODO
@@ -1268,8 +1330,10 @@ T Initialize_Discrete_Shell_Smock(
         if constexpr (!KL) {
             Find_Surface_Primitives(X.size, Elem, boundaryNode, edge, boundaryTri);
         }
-        Compute_Discrete_Shell_Inv_Basis_Smock<T, dim, KL>(X, Elem, Elem_smock, edge2tri, edge, edgeStencil, edgeInfo, elemAttr, elemAttr_smock);
-
+        if(!use_S2)
+            Compute_Discrete_Shell_Inv_Basis_Smock<T, dim, KL>(X, X_smock, Elem, Elem_smock, edge2tri, edge, edgeStencil, edgeInfo, elemAttr, elemAttr_smock, use_S2);
+        else
+            Compute_Discrete_Shell_Inv_Basis_Smock<T, dim, KL>(X, X_smock, Elem, Elem_smock_unmapped, edge2tri, edge, edgeStencil, edgeInfo, elemAttr, elemAttr_smock, use_S2);
         // mass matrix and body force
         std::vector<Eigen::Triplet<T>> triplets;
         b.resize(0);
@@ -2126,6 +2190,7 @@ void Export_Discrete_Shell(py::module& m) {
     shell_m.def("Add_Shell_withSmock", &Add_Discrete_Shell_3D_withSmock<double>);
     shell_m.def("reload_Shell_withSmock", &override_Shell_3D_withSmock<double>);
     shell_m.def("Add_Smock_Constraint", &Add_Smock_Constraint<double>);
+    shell_m.def("Add_Smocking_Constraint", &Add_Smocking_Constraint<double>);
     shell_m.def("Make_Rod", &Make_Rod<double, 3>);
     shell_m.def("Make_Rod_Net", &Make_Rod_Net<double, 3>);
     shell_m.def("Add_Discrete_Particles", &Add_Discrete_Particles<double, 3>);

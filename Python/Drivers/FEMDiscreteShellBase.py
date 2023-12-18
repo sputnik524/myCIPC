@@ -18,9 +18,11 @@ class FEMDiscreteShellBase(SimulationBase):
         self.X = Storage.V2dStorage() if self.dim == 2 else Storage.V3dStorage()
         self.X_rest = Storage.V2dStorage() if self.dim == 2 else Storage.V3dStorage()
         self.X_stage = Storage.V2dStorage() if self.dim == 2 else Storage.V3dStorage()
+        self.X_smocking = Storage.V2dStorage() if self.dim == 2 else Storage.V3dStorage() # for s2
         self.Elem = Storage.V2iStorage() if self.dim == 2 else Storage.V3iStorage()
         self.Elem_rest = Storage.V2iStorage() if self.dim == 2 else Storage.V3iStorage()
         self.Elem_smock = Storage.V2iStorage() if self.dim == 2 else Storage.V3iStorage()
+        self.Elem_smock_unmapped = Storage.V2iStorage() if self.dim == 2 else Storage.V3iStorage() # for s2
         self.Smock_pattern = Storage.V3iStorage()
         self.segs = StdVectorVector2i()
         self.outputSeg = False
@@ -154,6 +156,7 @@ class FEMDiscreteShellBase(SimulationBase):
         self.fine_mesh_res = self.coarse_mesh_res * self.fine_rate + 1 
         self.uniform_stitching_ratio = 1.0
         self.if_contact = True
+        self.use_s2 = False
 
     def add_shell_3D(self, filePath, translate, rotCenter, rotAxis, rotDeg): # 3D
         return FEM.DiscreteShell.Add_Shell(filePath, translate, Vector3d(1, 1, 1), rotCenter, rotAxis, rotDeg, self.X, self.Elem, self.compNodeRange)
@@ -235,10 +238,16 @@ class FEMDiscreteShellBase(SimulationBase):
 
         elif smock:
             print("Init with smock mode!")
-            FEM.DiscreteShell.Add_Smock_Constraint(filepath_smock, filepath_smock_pattern, self.Elem_smock, self.smock_size , self.if_contact)
-            self.dHat2 = FEM.DiscreteShell.Initialize_Shell_Hinge_EIPC_Smock(p_density, E, nu, thickness, self.dt, self.dHat2, self.X, self.Elem, self.Elem_smock, self.segs, \
+            if self.use_s2:
+                FEM.DiscreteShell.Add_Smocking_Constraint(filepath_smock, filepath_smock_pattern, self.X_smocking, self.Elem_smock, self.Elem_smock_unmapped, self.smock_size, self.uniform_stitching_ratio, self.stitchInfo, self.stitchRatio)
+            else:    
+                FEM.DiscreteShell.Add_Smock_Constraint(filepath_smock, filepath_smock_pattern, self.Elem_smock, self.smock_size , self.if_contact)
+            self.dHat2 = FEM.DiscreteShell.Initialize_Shell_Hinge_EIPC_Smock(p_density, E, nu, thickness, self.dt, self.dHat2, self.X, self.X_smocking, self.Elem, self.Elem_smock, self.Elem_smock_unmapped, self.segs, \
             self.edge2tri, self.edgeStencil, self.edgeInfo, self.nodeAttr, self.massMatrix, self.gravity, self.bodyForce, \
-            self.elemAttr, self.elemAttr_smock, self.elasticity, self.elasticity_smock, self.kappa, self.smock_cons)
+            self.elemAttr, self.elemAttr_smock, self.elasticity, self.elasticity_smock, self.kappa, self.smock_cons, self.use_s2)
+            if self.use_s2:
+                # print("The smocking stitching size: ", self.stitchInfo, "\n")
+                FEM.DiscreteShell.vis_stitching(self.X, self.Elem_smock, self.stitchInfo)
         
         else:
             print("Init with load mesh!")
