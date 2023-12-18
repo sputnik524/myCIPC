@@ -72,6 +72,12 @@ void Compute_Smock_Membrane_Energy(
                 else {
                     MATRIX<T, dim - 1> M = IB * A; M(0, 0) -= 1; M(1, 1) -= 1;
                     E += h * h * vol / 4 * (0.5 * lambda * pow(M.trace(), 2) + mu * (M * M).trace());
+                    // std::cout << "IB info with id: " << id << std::endl;
+                    // std::cout << "IB00: " << IB(0, 0) << std::endl;
+                    // std::cout << "IB10, IB01: " << IB(1, 0) << std::endl;
+                    // std::cout << "IB11: " << IB(1, 1) << std::endl;
+                    // std::cout << "Current vol: " << vol << std::endl;
+                    // std::cout << "Current +E: " << h * h * vol / 4 * (0.5 * lambda * pow(M.trace(), 2) + mu * (M * M).trace()) << std::endl;
                 }
             }
         });

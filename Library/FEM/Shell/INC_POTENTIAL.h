@@ -260,6 +260,7 @@ bool Compute_IncPotential(
         Compute_Rod_Bending_Energy(X, rodHinge, rodHingeInfo, h, value);
 
         // garment
+        std::cout << "Size of the stitching INfo: " << stitchInfo.size() << std::endl;
         Compute_Stitch_Energy(X, stitchInfo, stitchRatio, DBCb, k_stitch, h, value);
     }
 

@@ -312,6 +312,9 @@ class FEMDiscreteShellBase(SimulationBase):
         FEM.DiscreteShell.reload_Shell_withSmock(filePath, filePath_smock, newX, newElem)
         self.X = newX
         self.Elem = newElem
+
+    def Offset_smocking(self):
+        FEM.DiscreteShell.offset_smocking(self.X, self.stitchInfo)
     
     def load_velocity(self, folderPath, lastFrame, h):
         MeshIO.Load_Velocity(folderPath, lastFrame, h, self.nodeAttr)

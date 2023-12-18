@@ -610,6 +610,18 @@ void vis_stitching(MESH_NODE<T, dim>& X, MESH_ELEM<dim - 1>& Elem, std::vector<V
     Write_TriMesh_Obj(X, Elem, "vis_stitch.obj");
 }
 
+template <class T, int dim = 3>
+void offset_smocking(MESH_NODE<T, dim>& X, std::vector<VECTOR<int, 3>>& stitchNodes){
+    std::cout << "Offset input planar mesh with smocking size:" << stitchNodes.size() << std::endl;
+    for(int i = 0; i < stitchNodes.size(); i++){
+        VECTOR<T, dim>& X1 = std::get<0>(X.Get_Unchecked(stitchNodes[i][0]));
+        VECTOR<T, dim>& X2 = std::get<0>(X.Get_Unchecked(stitchNodes[i][1]));
+        X1[1] -= 0.001;
+        X2[1] -= 0.001;
+        std::cout << "after smocking: " << X1[0] << X1[1] << X1[2] << std::endl;
+    }
+}
+
 template <class T, int dim>
 void Initialize_Garment(
     MESH_NODE<T, dim>& X, // mid-surface node coordinates
@@ -1028,6 +1040,11 @@ void Compute_Discrete_Shell_Inv_Basis_Smock(
                 IB(0, 0) = E01.length2();
                 IB(1, 0) = IB(0, 1) = E01.dot(E02);
                 IB(1, 1) = E02.length2();
+                // std::cout << "IB info with id: " << id << std::endl;
+                // std::cout << "IB00: " << IB(0, 0) << std::endl;
+                // std::cout << "IB10, IB01: " << IB(1, 0) << std::endl;
+                // std::cout << "IB11: " << IB(1, 1) << std::endl;
+
             }
 
             // const VECTOR<T, dim> E01 = X2 - X1;
@@ -1290,26 +1307,58 @@ T Initialize_Discrete_Shell_Smock(
         filteredElem.deep_copy_to(Elem);
 
         
-        MESH_ELEM<dim - 1> filteredElem_smock(Elem_smock.size);
-        Elem_smock.Each([&](int id, auto data){
-            auto &[elemVInd] = data;
-            const VECTOR<T, dim>& X1 = std::get<0>(X.Get_Unchecked(elemVInd[0]));
-            const VECTOR<T, dim>& X2 = std::get<0>(X.Get_Unchecked(elemVInd[1]));
-            const VECTOR<T, dim>& X3 = std::get<0>(X.Get_Unchecked(elemVInd[2]));
+        if(!use_S2)
+        {
+            MESH_ELEM<dim - 1> filteredElem_smock(Elem_smock.size);
+            Elem_smock.Each([&](int id, auto data){
+                auto &[elemVInd] = data;
+                const VECTOR<T, dim>& X1 = std::get<0>(X.Get_Unchecked(elemVInd[0]));
+                const VECTOR<T, dim>& X2 = std::get<0>(X.Get_Unchecked(elemVInd[1]));
+                const VECTOR<T, dim>& X3 = std::get<0>(X.Get_Unchecked(elemVInd[2]));
 
-            const VECTOR<T, dim> E01 = X2 - X1;
-            const VECTOR<T, dim> E02 = X3 - X1;
-            MATRIX<T, dim - 1> IB; // for first fundamental form
-            IB(0, 0) = E01.length2();
-            IB(1, 0) = IB(0, 1) = E01.dot(E02);
-            IB(1, 1) = E02.length2();
-            if(IB.determinant() != 0) {
-                filteredElem_smock.Append(elemVInd);
-            }
-        });
-        filteredElem_smock.deep_copy_to(Elem_smock);
+                const VECTOR<T, dim> E01 = X2 - X1;
+                const VECTOR<T, dim> E02 = X3 - X1;
+                MATRIX<T, dim - 1> IB; // for first fundamental form
+                IB(0, 0) = E01.length2();
+                IB(1, 0) = IB(0, 1) = E01.dot(E02);
+                IB(1, 1) = E02.length2();
+                if(IB.determinant() != 0) {
+                    filteredElem_smock.Append(elemVInd);
+                }
+            });
+            filteredElem_smock.deep_copy_to(Elem_smock);
+        }
+        else{
+            MESH_ELEM<dim - 1> filteredElem_smock(Elem_smock.size);
+            MESH_ELEM<dim - 1> filteredElem_smock_unmapped(Elem_smock_unmapped.size);
+            std::cout << "Size of teh elems: " << Elem_smock.size << ", " << Elem_smock_unmapped.size << std::endl;
+            Elem_smock_unmapped.Join(Elem_smock).Each([&](int id, auto data){
+                auto &[elemSmockVInd,elemVInd] = data;
+                const VECTOR<T, dim>& X1 = std::get<0>(X_smock.Get_Unchecked(elemSmockVInd[0]));
+                const VECTOR<T, dim>& X2 = std::get<0>(X_smock.Get_Unchecked(elemSmockVInd[1]));
+                const VECTOR<T, dim>& X3 = std::get<0>(X_smock.Get_Unchecked(elemSmockVInd[2]));
+
+                const VECTOR<T, dim> E01 = X2 - X1;
+                const VECTOR<T, dim> E02 = X3 - X1;
+                MATRIX<T, dim - 1> IB; // for first fundamental form
+                IB(0, 0) = E01.length2();
+                IB(1, 0) = IB(0, 1) = E01.dot(E02);
+                IB(1, 1) = E02.length2();
+                if(IB.determinant() != 0) {
+                    std::cout << "IB info with id: " << id << std::endl;
+                    std::cout << "IB00: " << IB(0, 0) << std::endl;
+                    std::cout << "IB10, IB01: " << IB(1, 0) << std::endl;
+                    std::cout << "IB11: " << IB(1, 1) << std::endl;
+
+                    filteredElem_smock.Append(elemVInd);
+                    filteredElem_smock_unmapped.Append(elemSmockVInd);
+                }
+            });
+            filteredElem_smock.deep_copy_to(Elem_smock);
+            filteredElem_smock_unmapped.deep_copy_to(Elem_smock_unmapped);
+        }
         Write_TriMesh_Obj(X, Elem_smock, "visualize.obj");
-        std::cout << "NUmber of Filtered Smocking constraints: " << Elem_smock.size << std::endl;
+        std::cout << "NUmber of Filtered Smocking constraints: " << Elem_smock.size << ", " << Elem_smock_unmapped.size << std::endl;
 
         nodeAttr = MESH_NODE_ATTR<T, dim>(X.size);
         for (int i = 0; i < X.size; ++i) {
@@ -2196,6 +2245,7 @@ void Export_Discrete_Shell(py::module& m) {
     shell_m.def("Add_Discrete_Particles", &Add_Discrete_Particles<double, 3>);
     shell_m.def("Initialize_Shell", &Initialize_Discrete_Shell<double, 3, true, false>);
     shell_m.def("Initialize_Garment", &Initialize_Garment<double, 3>);
+    shell_m.def("offset_smocking", &offset_smocking<double, 3>);
     shell_m.def("Initialize_Shell_Hinge", &Initialize_Discrete_Shell<double, 3, false, false>);
     shell_m.def("Update_Normal_Flow_Neumann", &Update_Normal_Flow_Neumann<double, 3>);
     shell_m.def("Update_Material_With_Tex_Shell", &Update_Material_With_Tex_Shell<double, 3>);
