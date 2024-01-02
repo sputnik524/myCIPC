@@ -27,12 +27,12 @@ if __name__ == "__main__":
         bendEMult = float(sys.argv[5])
 
     sim.mu = 0.0
-    sim.PNTol = 1.5e-4
+    sim.PNTol = 1e-3
 
     # determine the smock pattern type
-    smock_sizes = [130,48,64,32]
-    fine_mesh_res_ = [106,130,130,190]
-    smock_names = ['','braid','twist', 'arrow']
+    smock_sizes = [48,48,64,72]
+    fine_mesh_res_ = [130,130,130,130]
+    smock_names = ['box','braid','twist', 'arrow']
     smock_pattern_type = 1 # 0 for box, 1 for braid, 2 for twist, 3 for arrow
     sim.smock_size = smock_sizes[smock_pattern_type]
     sim.fine_mesh_res = fine_mesh_res_[smock_pattern_type]
@@ -49,14 +49,14 @@ if __name__ == "__main__":
     sim.dt = 0.01
     sim.k_stitch = 1e7
     sim.frame_dt = 0.01
-    sim.frame_num = 1
-    # sim.withCollision = True
+    sim.frame_num = 20
+    sim.withCollision = True
     sim.smock = True
     sim.smock_cons = 1.0
     sim.uniform_stitching_ratio = 1.0
     sim.if_contact = False
     sim.gravity = Vector3d(0, 0, 0) 
-    sim.staticSolve = True
+    # sim.staticSolve = True
     sim.use_s2 = True
     
     # Rescale S2!
