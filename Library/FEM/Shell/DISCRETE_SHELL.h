@@ -491,9 +491,11 @@ void Add_stitching(int mesh_size, T uniform_stitching_ratio, std::vector<VECTOR<
 
 // explicitly calculate the stitching line with known input mesh for virtual tryon 
 template <class T, int dim = 3>
-void Add_stitching_withbody(int mesh_size, T uniform_stitching_ratio, std::vector<VECTOR<int, 3>>& stitchNodes, 
-    std::vector<T>& stitchRatio, int nm_offset, MESH_ELEM<dim - 1>& Elem_smock)
-{
+void Add_stitching_withbody(int mesh_size, T uniform_stitching_ratio, std::vector<VECTOR<int, 3>>& stitchNodes_, 
+    std::vector<T>& stitchRatio_, int nm_offset, MESH_ELEM<dim - 1>& Elem_smock)
+{   
+    std::vector<VECTOR<int, 3>> stitchNodes;
+    std::vector<T> stitchRatio;
     stitchNodes.resize(12 * (mesh_size - 1));
     stitchRatio.resize(12 * (mesh_size - 1));
     std::cout << "Size of the smocking elements: " << Elem_smock.size << std::endl;
@@ -591,6 +593,10 @@ void Add_stitching_withbody(int mesh_size, T uniform_stitching_ratio, std::vecto
         stitchNodes[12*i + 11][2] = start_ind_r_ + (i + 1) * mesh_size + offset;
         stitchRatio[12*i + 11] = uniform_stitching_ratio;
     }
+    std::cout << "Before append stitching:" << stitchNodes_.size() << std::endl;
+    stitchNodes_.insert(stitchNodes_.end(), stitchNodes.begin(), stitchNodes.end());
+    stitchRatio_.insert(stitchRatio_.end(), stitchRatio.begin(), stitchRatio.end());
+    std::cout << "After append stitching:" << stitchNodes_.size() << std::endl;
 }
 
 template <class T, int dim = 3>
@@ -611,14 +617,16 @@ void vis_stitching(MESH_NODE<T, dim>& X, MESH_ELEM<dim - 1>& Elem, std::vector<V
 }
 
 template <class T, int dim = 3>
-void offset_smocking(MESH_NODE<T, dim>& X, std::vector<VECTOR<int, 3>>& stitchNodes){
-    std::cout << "Offset input planar mesh with smocking size:" << stitchNodes.size() << std::endl;
+void offset_smocking(VECTOR<T, dim> offset_vec, MESH_NODE<T, dim>& X, std::vector<VECTOR<int, 3>>& stitchNodes){
+    // std::cout << "Offset input planar mesh with smocking size:" << stitchNodes.size() << std::endl;
     for(int i = 0; i < stitchNodes.size(); i++){
         VECTOR<T, dim>& X1 = std::get<0>(X.Get_Unchecked(stitchNodes[i][0]));
         VECTOR<T, dim>& X2 = std::get<0>(X.Get_Unchecked(stitchNodes[i][1]));
-        X1[1] -= 0.005;
-        X2[1] -= 0.005;
-        std::cout << "after smocking: " << X1[0] << X1[1] << X1[2] << std::endl;
+        // X1[1] -= 0.005;
+        // X2[1] -= 0.005;
+        X1 += offset_vec;
+        X2 += offset_vec;
+        // std::cout << "after smocking: " << X1[0] << X1[1] << X1[2] << std::endl;
     }
 }
 
@@ -1345,11 +1353,11 @@ T Initialize_Discrete_Shell_Smock(
                 IB(1, 0) = IB(0, 1) = E01.dot(E02);
                 IB(1, 1) = E02.length2();
                 if(abs(IB.determinant()) > 1e-20) {
-                    std::cout << "IB info with id: " << id << std::endl;
-                    std::cout << "IB det: " << IB.determinant() << std::endl;
-                    std::cout << "IB00: " << IB(0, 0) << std::endl;
-                    std::cout << "IB10, IB01: " << IB(1, 0) << std::endl;
-                    std::cout << "IB11: " << IB(1, 1) << std::endl;
+                    // std::cout << "IB info with id: " << id << std::endl;
+                    // std::cout << "IB det: " << IB.determinant() << std::endl;
+                    // std::cout << "IB00: " << IB(0, 0) << std::endl;
+                    // std::cout << "IB10, IB01: " << IB(1, 0) << std::endl;
+                    // std::cout << "IB11: " << IB(1, 1) << std::endl;
 
                     filteredElem_smock.Append(elemVInd);
                     filteredElem_smock_unmapped.Append(elemSmockVInd);

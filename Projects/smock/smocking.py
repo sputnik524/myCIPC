@@ -38,22 +38,22 @@ if __name__ == "__main__":
     sim.fine_mesh_res = fine_mesh_res_[smock_pattern_type]
     smock_name = smock_names[smock_pattern_type]
 
-    # make the intial smocking
-    # sim.add_shell_with_scale_3D_smock("input/"+smock_name +"/S3.obj","input/"+smock_name +"/S1.obj", Vector3d(0, 0, -0.3), Vector3d(0.045, 0.045, 0.045),\
-    #     Vector3d(0, 0, 0), Vector3d(0, 0, 1), -90)
-    sim.add_shell_with_scale_3D("input/"+smock_name +"/S3.obj", Vector3d(0, 0.3, 0.4), Vector3d(0.02, 0.02, 0.02),\
-        Vector3d(0, 0, 0), Vector3d(1, 0, 0), -90)
+
+    # sim.add_shell_with_scale_3D("input/"+smock_name +"/S3.obj", Vector3d(0, 0.3, 0.4), Vector3d(0.02, 0.02, 0.02),\
+    #     Vector3d(0, 0, 0), Vector3d(1, 0, 0), -90)
+    sim.add_shell_with_scale_3D("input/"+smock_name +"/S3.obj", Vector3d(0.3, 0.3, -0.15), Vector3d(0.02, 0.02, 0.02),\
+        Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0)
 
     sim.muComp = StdVectorXd([0, 0, sim.mu,  0, 0, sim.mu,  sim.mu, sim.mu, 0.1])
 
     sim.dt = 0.01
-    sim.k_stitch = 1e7
+    sim.k_stitch = 10000
     sim.frame_dt = 0.01
     sim.frame_num = 20
     sim.withCollision = True
     sim.smock = True
     sim.smock_cons = 1.0
-    sim.uniform_stitching_ratio = 1.0
+    sim.uniform_stitching_ratio_smock = 1.0
     sim.if_contact = False
     sim.gravity = Vector3d(0, 0, 0) 
     # sim.staticSolve = True
@@ -66,7 +66,8 @@ if __name__ == "__main__":
     sim.kappa_s = Vector2d(0, 0)
     
     # Offset S3! 
-    sim.Offset_smocking() 
+    offset_vec =  Vector3d(0, 0, 0.01)
+    sim.Offset_smocking(offset_vec) 
     
     sim.initialize_OIPC(1e-3, 0)
 

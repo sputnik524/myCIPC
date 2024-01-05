@@ -4,7 +4,7 @@
 
 namespace JGSL {
 
-template<class T, int dim, bool useNH = true>
+template<class T, int dim, bool useNH = false>
 void Compute_Smock_Membrane_Energy(
     MESH_ELEM<dim - 1>& Elem, MESH_ELEM<dim - 1>& Elem_smock, T h,
     const std::vector<bool>& DBCb,
@@ -84,7 +84,7 @@ void Compute_Smock_Membrane_Energy(
     }
 }
 
-template<class T, int dim, bool useNH = true>
+template<class T, int dim, bool useNH = false>
 void Compute_Smock_Membrane_Gradient(
     MESH_ELEM<dim - 1>& Elem, MESH_ELEM<dim - 1>& Elem_smock, T h,
     const std::vector<bool>& DBCb,
@@ -214,7 +214,7 @@ void Compute_Smock_Membrane_Gradient(
     }
 }
 
-template<class T, int dim, bool useNH = true>
+template<class T, int dim, bool useNH = false>
 void Compute_Smock_Membrane_Hessian(
     MESH_ELEM<dim - 1>& Elem, 
     MESH_ELEM<dim - 1>& Elem_smock, 
