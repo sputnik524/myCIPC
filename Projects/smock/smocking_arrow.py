@@ -27,13 +27,13 @@ if __name__ == "__main__":
         bendEMult = float(sys.argv[5])
 
     sim.mu = 0.0
-    sim.PNTol = 1.5e-4
+    sim.PNTol = 1e-3
 
     # determine the smock pattern type
-    smock_sizes = [48,48,64,72,48,36,54]
-    fine_mesh_res_ = [130,130,130,130,130,130,130]
-    smock_names = ['box','braid','twist', 'arrow','leaf','braid_2','twist_2']
-    smock_pattern_type = 6 # 0 for box, 1 for braid, 2 for twist, 3 for arrow
+    smock_sizes = [48,48,64,72]
+    fine_mesh_res_ = [130,130,130,130]
+    smock_names = ['box','braid','twist', 'arrow']
+    smock_pattern_type = 3 # 0 for box, 1 for braid, 2 for twist, 3 for arrow
     sim.smock_size = smock_sizes[smock_pattern_type]
     sim.fine_mesh_res = fine_mesh_res_[smock_pattern_type]
     smock_name = smock_names[smock_pattern_type]
@@ -47,10 +47,10 @@ if __name__ == "__main__":
     sim.muComp = StdVectorXd([0, 0, sim.mu,  0, 0, sim.mu,  sim.mu, sim.mu, 0.1])
 
     sim.dt = 0.01
-    sim.k_stitch = 1e7
+    sim.k_stitch = 500
     sim.frame_dt = 0.01
-    sim.frame_num = 1
-    sim.withCollision = False
+    sim.frame_num = 3
+    sim.withCollision = True
     sim.smock = True
     sim.smock_cons = 1.0
     sim.uniform_stitching_ratio_smock = 1.0
@@ -61,12 +61,11 @@ if __name__ == "__main__":
     
     # Rescale S2!
     sim.initialize(sim.cloth_density_iso[clothI], sim.cloth_Ebase_iso[clothI] * membEMult,
-        sim.cloth_nubase_iso[clothI], sim.cloth_thickness_iso[clothI], 0, smock = sim.smock, filepath_smock = "input/"+smock_name +"/S2_rescaled.obj", filepath_smock_pattern = "input/"+smock_name +"/S1.obj")
+        sim.cloth_nubase_iso[clothI], sim.cloth_thickness_iso[clothI], 0, smock = sim.smock, filepath_smock = "input/"+smock_name +"/S2_rescaled.obj", filepath_smock_pattern = "input/"+smock_name +"/S1_s.obj")
     sim.bendingStiffMult = bendEMult / membEMult
     sim.kappa_s = Vector2d(0, 0)
     
     # Offset S3! 
-    # keep displacement small! otherwise big rolling!
     offset_vec =  Vector3d(0, 0, 0.001)
     sim.Offset_smocking(offset_vec) 
     

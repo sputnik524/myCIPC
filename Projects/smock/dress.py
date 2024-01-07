@@ -86,4 +86,4 @@ if __name__ == "__main__":
     sim.initialize_OIPC(1e-3, 0)
     # sim.load_frame("input/"+smock_name +"/shell0.obj")
 
-    sim.run()
+    # sim.run()
