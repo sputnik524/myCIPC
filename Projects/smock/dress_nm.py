@@ -33,7 +33,7 @@ if __name__ == "__main__":
     smock_sizes = [130,48,64,72]
     fine_mesh_res_ = [106,130,130,130]
     smock_names = ['','braid','twist', 'arrow']
-    smock_pattern_type = 1 # 0 for box, 1 for braid, 2 for twist, 3 for arrow
+    smock_pattern_type = 3 # 0 for box, 1 for braid, 2 for twist, 3 for arrow
     sim.smock_size = smock_sizes[smock_pattern_type]
     sim.fine_mesh_res = fine_mesh_res_[smock_pattern_type]
     smock_name = smock_names[smock_pattern_type]
@@ -45,14 +45,14 @@ if __name__ == "__main__":
         Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0) 
 
     # 2. add the garment with identical size that to be sewed 
-    sim.add_shell_with_scale_3D("input/"+smock_name +"/S3.obj", Vector3d(0.1, -0.2, 0.55), #Vector3d(0, 0.2, -0.85)
-        Vector3d(0.045, 0.085, 0.045),Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0) 
+    sim.add_shell_with_scale_3D("input/"+smock_name +"/S3_.obj", Vector3d(0.1, -0.1, 0.55), #Vector3d(0, 0.2, -0.85)
+        Vector3d(0.045, 0.08, 0.045),Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0) 
     
     sim.add_shell_with_scale_3D("input/"+smock_name +"/S3.obj", Vector3d(1.0, 0.2, -0.25), \
         Vector3d(0.065, 0.065, 0.065),Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0)
     
     sim.add_shell_with_scale_3D("input/"+smock_name +"/S3.obj", Vector3d(1.0, -0.2, 0.55), \
-        Vector3d(0.07, 0.085, 0.07),Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0)
+        Vector3d(0.07, 0.1, 0.07),Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0)
 
     # 3. add mannequin
     meshCounter = sim.add_shell_with_scale_3D("input/woman_rot.obj", Vector3d(0.85, 0.5, 0.12), \
