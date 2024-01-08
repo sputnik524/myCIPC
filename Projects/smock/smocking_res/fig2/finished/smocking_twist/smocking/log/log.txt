@@ -1,0 +1,48 @@
+Init with smock mode!
+Total PN iteration count:  129 
+
+Advance dt with 1.00e-02
+[##################################################] 100.000 Frame 1
+[##################################################] 100.000
+┏ Global : 1m 5.279175s (100.0%%)   1m 5.279175s (100.0%%)
+┃ Write_TriMesh_Obj : 0.023116s (0.0%%)   0.023116s (0.0%%)
+┃ constructCSRMatrixFromTriplet : 0.001435s (0.0%%)   0.001435s (0.0%%)
+┃┏ implicitEuler_with_smock : 1m 5.050859s (99.7%%)   1m 5.050859s (99.7%%)
+┃┃┏ Compute_IncPotential_with_smock : 2.545334s (3.9%%)   2.545334s (3.9%%)
+┃┃┃ Compute_Membrane_Energy : 0.564809s (0.9%%)   0.564809s (0.9%%)
+┃┃┃ Compute_Bending_Energy : 0.792564s (1.2%%)   0.792564s (1.2%%)
+┃┃┃ computeDG : 0.197057s (0.3%%)   0.197057s (0.3%%)
+┃┃┃ computePsi : 0.305675s (0.5%%)   0.305675s (0.5%%)
+┃┃┃ Compute_Rod_Spring_Energy : 0.000122s (0.0%%)   0.000122s (0.0%%)
+┃┃┃ Compute_Rod_Bending_Energy : 0.000091s (0.0%%)   0.000091s (0.0%%)
+┃┃┃ Compute_Stitch_Energy : 0.000731s (0.0%%)   0.000731s (0.0%%)
+┃┃┃ Uncounted : 0.684284s (1.0%%)   0.684284s (1.0%%)
+┃┃┗
+┃┃┏ Compute_IncPotential_Gradient_with_smock : 2.830989s (4.3%%)   2.830989s (4.3%%)
+┃┃┃ Compute_Membrane_Gradient : 0.832769s (1.3%%)   0.832769s (1.3%%)
+┃┃┃ Compute_Bending_Gradient : 1.393944s (2.1%%)   1.393944s (2.1%%)
+┃┃┃ computeStress : 0.166422s (0.3%%)   0.166422s (0.3%%)
+┃┃┃ elem2node : 0.108311s (0.2%%)   0.108311s (0.2%%)
+┃┃┃ Compute_Rod_Spring_Gradient : 0.000055s (0.0%%)   0.000055s (0.0%%)
+┃┃┃ Compute_Rod_Bending_Gradient : 0.000056s (0.0%%)   0.000056s (0.0%%)
+┃┃┃ Compute_Stitch_Gradient : 0.001429s (0.0%%)   0.001429s (0.0%%)
+┃┃┃ Uncounted : 0.328004s (0.5%%)   0.328004s (0.5%%)
+┃┃┗
+┃┃ Compute_Membrane_Hessian : 3.705913s (5.7%%)   3.705913s (5.7%%)
+┃┃ Compute_Bending_Hessian : 6.926739s (10.6%%)   6.926739s (10.6%%)
+┃┃┏ Compute_Volumetric_Elasticity_Hessian : 0.431471s (0.7%%)   0.431471s (0.7%%)
+┃┃┃ computeStressDerivative : 0.117833s (0.2%%)   0.117833s (0.2%%)
+┃┃┃ elem2node : 0.101666s (0.2%%)   0.101666s (0.2%%)
+┃┃┃ Uncounted : 0.211971s (0.3%%)   0.211971s (0.3%%)
+┃┃┗
+┃┃ Compute_Rod_Spring_Hessian : 0.131735s (0.2%%)   0.131735s (0.2%%)
+┃┃ Compute_Rod_Bending_Hessian : 0.119575s (0.2%%)   0.119575s (0.2%%)
+┃┃ Compute_Stitch_Hessian : 5.433319s (8.3%%)   5.433319s (8.3%%)
+┃┃ constructCSRMatrixFromTriplet : 7.865777s (12.0%%)   7.865777s (12.0%%)
+┃┃ projectDBC : 0.262470s (0.4%%)   0.262470s (0.4%%)
+┃┃ linearSolve : 33.575838s (51.4%%)   33.575838s (51.4%%)
+┃┃ Compute_Max_And_Avg_Stretch : 0.003790s (0.0%%)   0.003790s (0.0%%)
+┃┃ Uncounted : 1.217910s (1.9%%)   1.217910s (1.9%%)
+┃┗
+┃ Uncounted : 0.203765s (0.3%%)   0.203765s (0.3%%)
+┗

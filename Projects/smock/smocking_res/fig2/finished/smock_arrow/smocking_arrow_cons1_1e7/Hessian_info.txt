@@ -1,0 +1,9 @@
+Hessian not SPD in PNIter12
+Hessian not SPD in PNIter19
+Hessian not SPD in PNIter22
+Hessian not SPD in PNIter24
+Hessian not SPD in PNIter26
+Hessian not SPD in PNIter30
+Hessian not SPD in PNIter41
+Hessian not SPD in PNIter99
+Hessian not SPD in PNIter101
