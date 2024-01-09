@@ -177,8 +177,11 @@ class FEMDiscreteShellBase(SimulationBase):
         if vis:
             FEM.DiscreteShell.vis_stitching(self.X, self.Elem, self.stitchInfo)
 
-    def add_stitching_withbody(self, vis = False):
-        FEM.DiscreteShell.Add_Stitching_witbody(self.fine_mesh_res, self.uniform_stitching_ratio, self.stitchInfo, self.stitchRatio, self.smock_size, self.Smock_pattern)
+    def add_stitching_withbody(self, vis = False, rendering=False):
+        if not rendering:
+            FEM.DiscreteShell.Add_Stitching_witbody(self.fine_mesh_res, self.uniform_stitching_ratio, self.stitchInfo, self.stitchRatio, self.smock_size, self.Smock_pattern)
+        else:
+            FEM.DiscreteShell.vis_Stitching_witbody(self.fine_mesh_res, self.uniform_stitching_ratio, self.stitchInfo, self.stitchRatio, self.smock_size, self.Smock_pattern)
         if vis:
             FEM.DiscreteShell.vis_stitching(self.X, self.Elem, self.stitchInfo)
 

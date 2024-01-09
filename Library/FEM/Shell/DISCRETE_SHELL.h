@@ -600,6 +600,116 @@ void Add_stitching_withbody(int mesh_size, T uniform_stitching_ratio, std::vecto
 }
 
 template <class T, int dim = 3>
+void vis_stitching_withbody(int mesh_size, T uniform_stitching_ratio, std::vector<VECTOR<int, 3>>& stitchNodes_, 
+    std::vector<T>& stitchRatio_, int nm_offset, MESH_ELEM<dim - 1>& Elem_smock)
+{   
+    std::vector<VECTOR<int, 3>> stitchNodes;
+    std::vector<T> stitchRatio;
+    stitchNodes.resize(12 * (mesh_size - 1));
+    stitchRatio.resize(12 * (mesh_size - 1));
+    std::cout << "Size of the smocking elements: " << Elem_smock.size << std::endl;
+    int start_ind_l = 0;
+    int start_ind_r = mesh_size - 1;
+    std::vector<int> leftedge(mesh_size);
+    std::vector<int> rightedge(mesh_size);
+    for(int i = 0; i < mesh_size; i++){
+        int displacement_l = 0;
+        int displacement_r = 0;
+        int cur_l = start_ind_l + i * mesh_size;
+        int cur_r = start_ind_r + i * mesh_size;
+            for(int j = 0; j < Elem_smock.size; j++){
+                const VECTOR<int, dim>& smock_ind = std::get<0>(Elem_smock.Get_Unchecked(j));
+                if(cur_l > smock_ind[dim-2])
+                    displacement_l++;
+                if(cur_l > smock_ind[dim-1] && smock_ind[dim-1] >= 0)
+                    displacement_l++;
+                if(cur_r > smock_ind[dim-2])
+                    displacement_r++;
+                if(cur_r > smock_ind[dim-1] && smock_ind[dim-1] >= 0)
+                    displacement_r++;
+            }
+        cur_l -= displacement_l;
+        cur_r -= displacement_r;
+        std::cout << "Current displacement: Left:" << displacement_l << "Right: " << displacement_r << std::endl;
+        leftedge[i] = cur_l;
+        rightedge[i] = cur_r;
+    }
+
+    int start_ind_l_ = mesh_size * mesh_size - nm_offset;
+    int start_ind_r_ = mesh_size * mesh_size + mesh_size - 1 - nm_offset;
+    int start_ind_front = mesh_size * (mesh_size - 1) - nm_offset;
+    int offset = mesh_size * mesh_size;
+    int start_ind_back = mesh_size * (mesh_size - 1) - nm_offset + offset;
+
+    for(int i = 0; i < mesh_size-1; i++){
+        stitchNodes[12*i][0] = start_ind_l_ + i * mesh_size;
+        stitchNodes[12*i][1] = leftedge[i];
+        stitchNodes[12*i][2] = leftedge[i+1];
+        stitchRatio[12*i] = uniform_stitching_ratio;
+
+        stitchNodes[12*i + 1][0] = start_ind_l_ + (i + 1) * mesh_size;
+        stitchNodes[12*i + 1][1] = start_ind_l_ + i * mesh_size;
+        stitchNodes[12*i + 1][2] = leftedge[i+1];
+        stitchRatio[12*i + 1] = uniform_stitching_ratio;
+    
+        stitchNodes[12*i + 2][0] = start_ind_r_ + i * mesh_size;
+        stitchNodes[12*i + 2][1] = rightedge[i];
+        stitchNodes[12*i + 2][2] = rightedge[i+1];
+        stitchRatio[12*i + 2] = uniform_stitching_ratio;
+
+        stitchNodes[12*i + 3][0] = start_ind_r_ + (i + 1) * mesh_size;
+        stitchNodes[12*i + 3][1] = start_ind_r_ + i * mesh_size;
+        stitchNodes[12*i + 3][2] = rightedge[i+1];
+        stitchRatio[12*i + 3] = uniform_stitching_ratio;
+
+        stitchNodes[12*i + 4][0] = start_ind_front + i + mesh_size + offset;
+        stitchNodes[12*i + 4][1] = start_ind_front + i;
+        stitchNodes[12*i + 4][2] = start_ind_front + i + 1;
+        stitchRatio[12*i + 4] = uniform_stitching_ratio;
+
+        stitchNodes[12*i + 5][0] = start_ind_front + i + mesh_size + offset + 1;
+        stitchNodes[12*i + 5][1] = start_ind_front + i + mesh_size + offset;
+        stitchNodes[12*i + 5][2] = start_ind_front + i + 1;
+        stitchRatio[12*i + 5] = uniform_stitching_ratio;
+
+        stitchNodes[12*i + 6][0] = start_ind_back + i + mesh_size + offset;
+        stitchNodes[12*i + 6][1] = start_ind_back + i;
+        stitchNodes[12*i + 6][2] = start_ind_back + i + 1;
+        stitchRatio[12*i + 6] = uniform_stitching_ratio;
+
+        stitchNodes[12*i + 7][0] = start_ind_back + i + mesh_size + offset + 1;
+        stitchNodes[12*i + 7][1] = start_ind_back + i + mesh_size + offset;
+        stitchNodes[12*i + 7][2] = start_ind_back + i + 1;
+        stitchRatio[12*i + 7] = uniform_stitching_ratio;
+
+        stitchNodes[12*i + 8][0] = start_ind_l_ + i * mesh_size + 2 * offset;
+        stitchNodes[12*i + 8][1] = start_ind_l_ + i * mesh_size + offset;
+        stitchNodes[12*i + 8][2] = start_ind_l_ + (i + 1) * mesh_size + offset;
+        stitchRatio[12*i + 8] = uniform_stitching_ratio;
+
+        stitchNodes[12*i + 9][0] = start_ind_l_ + (i + 1) * mesh_size + 2 * offset;
+        stitchNodes[12*i + 9][1] = start_ind_l_ + i * mesh_size + 2 * offset;
+        stitchNodes[12*i + 9][2] = start_ind_l_ + (i + 1) * mesh_size + offset;
+        stitchRatio[12*i + 9] = uniform_stitching_ratio;
+
+        stitchNodes[12*i + 10][0] = start_ind_r_ + i * mesh_size + 2 * offset;
+        stitchNodes[12*i + 10][1] = start_ind_r_ + i * mesh_size + offset;
+        stitchNodes[12*i + 10][2] = start_ind_r_ + (i + 1) * mesh_size + offset;
+        stitchRatio[12*i + 10] = uniform_stitching_ratio;
+
+        stitchNodes[12*i + 11][0] = start_ind_r_ + (i + 1) * mesh_size + 2 * offset;
+        stitchNodes[12*i + 11][1] = start_ind_r_ + i * mesh_size + 2 * offset;
+        stitchNodes[12*i + 11][2] = start_ind_r_ + (i + 1) * mesh_size + offset;
+        stitchRatio[12*i + 11] = uniform_stitching_ratio;
+    }
+    std::cout << "Before append stitching:" << stitchNodes_.size() << std::endl;
+    stitchNodes_.insert(stitchNodes_.end(), stitchNodes.begin(), stitchNodes.end());
+    stitchRatio_.insert(stitchRatio_.end(), stitchRatio.begin(), stitchRatio.end());
+    std::cout << "After append stitching:" << stitchNodes_.size() << std::endl;
+}
+
+
+template <class T, int dim = 3>
 void vis_stitching(MESH_NODE<T, dim>& X, MESH_ELEM<dim - 1>& Elem, std::vector<VECTOR<int, 3>>& stitchNodes){
     MESH_ELEM<dim - 1> newElem;
     VECTOR<int, 3> tri;
@@ -2243,6 +2353,7 @@ void Export_Discrete_Shell(py::module& m) {
     shell_m.def("Add_Garment", &Add_Garment_3D<double>);
     shell_m.def("Add_Stitching", &Add_stitching<double>);
     shell_m.def("Add_Stitching_witbody", &Add_stitching_withbody<double>);
+    shell_m.def("vis_Stitching_witbody", &vis_stitching_withbody<double>);
     shell_m.def("vis_stitching", &vis_stitching<double>);
     shell_m.def("Add_Shell", &Add_Discrete_Shell_3D<double>);
     shell_m.def("Add_Shell_withSmock", &Add_Discrete_Shell_3D_withSmock<double>);
