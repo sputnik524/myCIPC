@@ -45,14 +45,14 @@ if __name__ == "__main__":
         Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0) 
 
     # 2. add the garment with identical size that to be sewed 
-    sim.add_shell_with_scale_3D("input/"+smock_name +"/S3_.obj", Vector3d(0.1, -0.1, 0.55), #Vector3d(0, 0.2, -0.85)
+    sim.add_shell_with_scale_3D("input/"+smock_name +"/S3_.obj", Vector3d(0.25, 0.1, 0.55), #Vector3d(0, 0.2, -0.85)
         Vector3d(0.045, 0.085, 0.045),Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0) 
     
     sim.add_shell_with_scale_3D("input/"+smock_name +"/S3.obj", Vector3d(1.0, 0.2, -0.25), \
         Vector3d(0.065, 0.065, 0.065),Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0)
     
-    sim.add_shell_with_scale_3D("input/"+smock_name +"/S3.obj", Vector3d(1.0, -0.2, 0.55), \
-        Vector3d(0.07, 0.105, 0.07),Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0)
+    sim.add_shell_with_scale_3D("input/"+smock_name +"/S3.obj", Vector3d(1.0, -0.05, 0.55), \
+        Vector3d(0.07, 0.115, 0.07),Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0)
 
     # 3. add mannequin
     meshCounter = sim.add_shell_with_scale_3D("input/woman_rot.obj", Vector3d(0.75, 0.5, 0.12), \
@@ -71,7 +71,7 @@ if __name__ == "__main__":
     sim.dt = 0.01
     sim.frame_dt = 0.01
     sim.frame_num = 100
-    sim.k_stitch = 5.0
+    sim.k_stitch = 3.0
     sim.withCollision = True
     sim.smock = True
     sim.smock_cons = 1.0
