@@ -31,21 +31,21 @@ if __name__ == "__main__":
 
     # determine the smock pattern type
     smock_names = ['box','braid','twist','arrow','leaf','braid_2','twist_2']
-    smock_pattern_type = 1
+    smock_pattern_type = 3
     sim.smock_size = 0 # remain manifold
     sim.fine_mesh_res = 130
     smock_name = smock_names[smock_pattern_type]
 
     ################################ in-situ Smocking!! ####################  
     
-    sim.add_shell_with_scale_3D("input/"+smock_name +"/S3.obj", Vector3d(0.3, 0.3, -0.05), Vector3d(0.04, 0.04, 0.04),\
+    sim.add_shell_with_scale_3D("input/"+smock_name +"/S3.obj", Vector3d(0.3, 0.3, -0.15), Vector3d(0.04, 0.04, 0.04),\
         Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0)
 
     # 2. add the garment with identical size that to be sewed 
-    sim.add_shell_with_scale_3D("input/"+smock_name +"/S3.obj", Vector3d(0.3, 0.1, 0.45), #Vector3d(0, 0.2, -0.85)
+    sim.add_shell_with_scale_3D("input/"+smock_name +"/S3_.obj", Vector3d(0.3, 0.1, 0.45), #Vector3d(0, 0.2, -0.85)
         Vector3d(0.04, 0.07, 0.07),Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0) 
     
-    sim.add_shell_with_scale_3D("input/"+smock_name +"/S3.obj", Vector3d(1.0, 0.22, -0.05), \
+    sim.add_shell_with_scale_3D("input/"+smock_name +"/S3.obj", Vector3d(1.0, 0.22, -0.15), \
         Vector3d(0.05, 0.05, 0.05),Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0)
     
     sim.add_shell_with_scale_3D("input/"+smock_name +"/S3.obj", Vector3d(1.0, 0.1, 0.45), \
@@ -79,11 +79,11 @@ if __name__ == "__main__":
     sim.bendingStiffMult = bendEMult / membEMult
     sim.kappa_s = Vector2d(0, 0)
 
-    offset_vec = Vector3d(0, 0, 0.02)
+    offset_vec = Vector3d(0, 0, 0.001)
     sim.Offset_smocking(offset_vec) 
     sim.add_stitching_withbody()
     
     sim.initialize_OIPC(1e-3, 0)
     # sim.load_frame("input/"+smock_name +"/shell0.obj")
 
-    # sim.run()
+    sim.run()

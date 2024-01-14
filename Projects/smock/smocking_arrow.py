@@ -37,7 +37,7 @@ if __name__ == "__main__":
     sim.smock_size = smock_sizes[smock_pattern_type]
     sim.fine_mesh_res = fine_mesh_res_[smock_pattern_type]
     smock_name = smock_names[smock_pattern_type]
-
+    solve_static = Falsealse
 
     # sim.add_shell_with_scale_3D("input/"+smock_name +"/S3.obj", Vector3d(0, 0.3, 0.4), Vector3d(0.02, 0.02, 0.02),\
     #     Vector3d(0, 0, 0), Vector3d(1, 0, 0), -90)
@@ -58,6 +58,13 @@ if __name__ == "__main__":
     sim.gravity = Vector3d(0, 0, 0) 
     # sim.staticSolve = True
     sim.use_s2 = True
+
+    if(solve_static):
+        sim.k_stitch = 1e7
+        sim.frame_num = 1
+        sim.staticSolve = True
+        sim.PNTol = 1e-4
+        sim.withCollision = False
     
     # Rescale S2!
     sim.initialize(sim.cloth_density_iso[clothI], sim.cloth_Ebase_iso[clothI] * membEMult,

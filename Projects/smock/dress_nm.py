@@ -64,7 +64,7 @@ if __name__ == "__main__":
 
     
     # 4. add sewing info
-    sim.add_stitching_withbody()
+    sim.add_stitching_withbody(vis=True)
 
     sim.muComp = StdVectorXd([0, 0, sim.mu,  0, 0, sim.mu,  sim.mu, sim.mu, 0.1])
 
@@ -97,4 +97,4 @@ if __name__ == "__main__":
     
     sim.initialize_OIPC(1e-3, 0)
 
-    sim.run()
+    # sim.run()
