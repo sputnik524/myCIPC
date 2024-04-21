@@ -30,14 +30,14 @@ if __name__ == "__main__":
     sim.PNTol = 1e-3
 
     # determine the smock pattern type
-    smock_sizes = [48,48,64,72]
-    fine_mesh_res_ = [130,130,130,130]
-    smock_names = ['box','braid','twist', 'arrow']
-    smock_pattern_type = 3 # 0 for box, 1 for braid, 2 for twist, 3 for arrow
+    smock_sizes = [48,48,64,72,48,36,54]
+    fine_mesh_res_ = [130,130,130,130,130,130,130]
+    smock_names = ['box','braid','twist', 'arrow','leaf','braid_2','twist_2']
+    smock_pattern_type = 1 # 0 for box, 1 for braid, 2 for twist, 3 for arrow
     sim.smock_size = smock_sizes[smock_pattern_type]
     sim.fine_mesh_res = fine_mesh_res_[smock_pattern_type]
     smock_name = smock_names[smock_pattern_type]
-    solve_static = False
+    solve_static = True
 
     # sim.add_shell_with_scale_3D("input/"+smock_name +"/S3.obj", Vector3d(0, 0.3, 0.4), Vector3d(0.02, 0.02, 0.02),\
     #     Vector3d(0, 0, 0), Vector3d(1, 0, 0), -90)
@@ -56,11 +56,12 @@ if __name__ == "__main__":
     sim.uniform_stitching_ratio_smock = 1.0
     sim.if_contact = False
     sim.gravity = Vector3d(0, 0, 0) 
-    # sim.staticSolve = True
+    sim.staticSolve = solve_static
     sim.use_s2 = True
+    sim.use_dist = True
 
     if(solve_static):
-        sim.k_stitch = 1e7
+        sim.k_stitch = 8e6
         sim.frame_num = 1
         sim.staticSolve = True
         sim.PNTol = 1e-4
@@ -68,12 +69,13 @@ if __name__ == "__main__":
     
     # Rescale S2!
     sim.initialize(sim.cloth_density_iso[clothI], sim.cloth_Ebase_iso[clothI] * membEMult,
-        sim.cloth_nubase_iso[clothI], sim.cloth_thickness_iso[clothI], 0, smock = sim.smock, filepath_smock = "input/"+smock_name +"/S2_rescaled.obj", filepath_smock_pattern = "input/"+smock_name +"/S1_s.obj")
+        sim.cloth_nubase_iso[clothI], sim.cloth_thickness_iso[clothI], 0, smock = sim.smock, filepath_smock = "input/"+smock_name +"/S2_rescaled.obj", filepath_smock_pattern = "input/"+smock_name +"/S1.obj")
     sim.bendingStiffMult = bendEMult / membEMult
     sim.kappa_s = Vector2d(0, 0)
     
     # Offset S3! 
-    offset_vec =  Vector3d(0, 0, 0.001)
+    # keep displacement small! otherwise big rolling!
+    offset_vec =  Vector3d(0, 0, 0.005)
     sim.Offset_smocking(offset_vec) 
     
     sim.initialize_OIPC(1e-3, 0)

@@ -7,6 +7,7 @@
 
 #include <FEM/Shell/IMPLICIT_EULER.h>
 #include <FEM/Shell/SPLITTING_IE.h>
+#include <FEM/Shell/SMOCK_GRAPH.h>
 
 namespace py = pybind11;
 namespace JGSL {
@@ -351,7 +352,7 @@ void Add_Smocking_Constraint(
     const std::string& filePath,
     const std::string& filePath_smock_pattern, MESH_NODE<T, dim>& X_Smocking,
     MESH_ELEM<dim - 1>& SmockElem, MESH_ELEM<dim - 1>& SmockElem_unmapped, int& smock_size, 
-    T uniform_stitching_ratio, std::vector<VECTOR<int, 3>>& stitchNodes, 
+    MESH_ELEM<dim - 1>& Smock_pattern, T uniform_stitching_ratio, std::vector<VECTOR<int, 3>>& stitchNodes, 
     std::vector<T>& stitchRatio){
 
     MESH_NODE<T, dim> newX;
@@ -367,17 +368,41 @@ void Add_Smocking_Constraint(
     map_smock_pattern<dim>(newElem);
     Append_Attribute(newElem, SmockElem);
     Append_Attribute(newX, X_Smocking);
-    std::cout << "The size of the smocking constraint: " << smock_pattern.size << std::endl; 
+    Append_Attribute(smock_pattern, Smock_pattern);
+    std::cout << "The size of the smocking constraint: " << Smock_pattern.size << std::endl; 
 
     // add stitching info according to the smock_pattern
     stitchNodes.resize(smock_pattern.size);
     stitchRatio.resize(smock_pattern.size);
+
+    const VECTOR<int, dim>& check_arrow = std::get<0>(smock_pattern.Get_Unchecked(0));
+    if(check_arrow[2] >= 0){
+        stitchNodes.resize(2*smock_pattern.size);
+        stitchRatio.resize(2*smock_pattern.size);
+    }
+    
     smock_pattern.Each([&](int id, auto data){
         auto &[elemVInd] = data;
-        stitchNodes[id][0] = elemVInd[0];
-        stitchNodes[id][1] = elemVInd[1];
-        stitchNodes[id][2] = elemVInd[1];
-        stitchRatio[id] = uniform_stitching_ratio;
+        if(elemVInd[2] < 0)
+        {
+            stitchNodes[id][0] = elemVInd[0];
+            stitchNodes[id][1] = elemVInd[1];
+            stitchNodes[id][2] = elemVInd[1];
+            stitchRatio[id] = uniform_stitching_ratio;
+        }
+        else
+        {
+            stitchNodes[2*id][0] = elemVInd[0];
+            stitchNodes[2*id][1] = elemVInd[1];
+            stitchNodes[2*id][2] = elemVInd[1];
+            stitchRatio[2*id] = uniform_stitching_ratio;
+
+            stitchNodes[2*id+1][0] = elemVInd[1];
+            stitchNodes[2*id+1][1] = elemVInd[2];
+            stitchNodes[2*id+1][2] = elemVInd[2];
+            stitchRatio[2*id+1] = uniform_stitching_ratio;
+        }
+        
     });
 }
 
@@ -1093,7 +1118,8 @@ void Compute_Discrete_Shell_Inv_Basis_Smock(
     std::vector<VECTOR<int, 4>>& edgeStencil,
     std::vector<VECTOR<T, 3>>& edgeInfo,
     MESH_ELEM_ATTR<T, dim - 1>& elemAttr,
-    MESH_ELEM_ATTR<T, dim - 1>& elemAttr_smock, bool use_S2)
+    MESH_ELEM_ATTR<T, dim - 1>& elemAttr_smock, MESH_ELEM<dim - 1>& Smock_pattern,
+     bool use_S2, bool use_dist = false)
 {
     if constexpr (dim == 2) {
         //TODO
@@ -1148,7 +1174,7 @@ void Compute_Discrete_Shell_Inv_Basis_Smock(
                 IB(1, 0) = IB(0, 1) = E01.dot(E02);
                 IB(1, 1) = E02.length2();
             }
-            else
+            else if (!use_dist)
             {
                 const VECTOR<T, dim>& X1 = std::get<0>(X_smock.Get_Unchecked(elemVInd[0]));
                 const VECTOR<T, dim>& X2 = std::get<0>(X_smock.Get_Unchecked(elemVInd[1]));
@@ -1165,6 +1191,11 @@ void Compute_Discrete_Shell_Inv_Basis_Smock(
 
             }
 
+            else
+            {   
+                IB = compute_ref(elemVInd, X, Smock_pattern);
+                std::cout << "IB det: " << abs(IB.determinant()) << std::endl;
+            }
             // const VECTOR<T, dim> E01 = X2 - X1;
             // const VECTOR<T, dim> E02 = X3 - X1;
             // MATRIX<T, dim - 1> IB; // for first fundamental form
@@ -1179,7 +1210,7 @@ void Compute_Discrete_Shell_Inv_Basis_Smock(
             MATRIX<T, dim - 1> D; // for second fundamental form
             if(!use_S2)
                 Compute_SFF(X, Elem_smock, edge2tri_smock, id, cNormal, oppNormals, mnorms, D);
-            else
+            else if (!use_dist)
                 Compute_SFF(X_smock, Elem_smock, edge2tri_smock, id, cNormal, oppNormals, mnorms, D);
 
             elemAttr_smock.Append(IB, D);
@@ -1397,7 +1428,8 @@ T Initialize_Discrete_Shell_Smock(
     MESH_ELEM_ATTR<T, dim - 1>& elemAttr_smock,
     FIXED_COROTATED<T, dim - 1>& elasticityAttr,
     FIXED_COROTATED<T, dim - 1>& elasticityAttr_smock,
-    VECTOR<T, 3>& kappa, T smock_cons, bool use_S2 = false)
+    VECTOR<T, 3>& kappa, T smock_cons, MESH_ELEM<dim - 1>& Smock_pattern,
+     bool use_S2 = false, bool use_dist = false)
 {
     if constexpr (dim == 2) {
         //TODO
@@ -1446,10 +1478,11 @@ T Initialize_Discrete_Shell_Smock(
             });
             filteredElem_smock.deep_copy_to(Elem_smock);
         }
-        else{
+        else if (!use_dist)
+        {
             MESH_ELEM<dim - 1> filteredElem_smock(Elem_smock.size);
             MESH_ELEM<dim - 1> filteredElem_smock_unmapped(Elem_smock_unmapped.size);
-            std::cout << "Size of teh elems: " << Elem_smock.size << ", " << Elem_smock_unmapped.size << std::endl;
+            std::cout << "Size of the elems: " << Elem_smock.size << ", " << Elem_smock_unmapped.size << std::endl;
             Elem_smock_unmapped.Join(Elem_smock).Each([&](int id, auto data){
                 auto &[elemSmockVInd,elemVInd] = data;
                 const VECTOR<T, dim>& X1 = std::get<0>(X_smock.Get_Unchecked(elemSmockVInd[0]));
@@ -1463,18 +1496,34 @@ T Initialize_Discrete_Shell_Smock(
                 IB(1, 0) = IB(0, 1) = E01.dot(E02);
                 IB(1, 1) = E02.length2();
                 if(abs(IB.determinant()) > 1e-20) {
-                    // std::cout << "IB info with id: " << id << std::endl;
-                    // std::cout << "IB det: " << IB.determinant() << std::endl;
-                    // std::cout << "IB00: " << IB(0, 0) << std::endl;
-                    // std::cout << "IB10, IB01: " << IB(1, 0) << std::endl;
-                    // std::cout << "IB11: " << IB(1, 1) << std::endl;
-
                     filteredElem_smock.Append(elemVInd);
                     filteredElem_smock_unmapped.Append(elemSmockVInd);
                 }
             });
             filteredElem_smock.deep_copy_to(Elem_smock);
             filteredElem_smock_unmapped.deep_copy_to(Elem_smock_unmapped);
+        }
+
+        else
+        {
+            // dont need unmapped node positions, can use fine X directly 
+            MESH_ELEM<dim - 1> Elem_smock_graph;
+            graph_construct(Elem_smock_graph,13);
+            std::cout << "Size of the graph elems: " << Elem_smock_graph.size << std::endl;
+            MESH_ELEM<dim - 1> filteredElem_smock(Elem_smock_graph.size);
+
+            // map the graph to fine mesh
+            map_smock_pattern<dim>(Elem_smock_graph);
+
+            Elem_smock_graph.Each([&](int id, auto data){
+                auto &[elemGraphVInd] = data;
+                MATRIX<T, dim - 1> IB;
+                IB = compute_ref(elemGraphVInd, X, Smock_pattern);
+                if(abs(IB.determinant()) > 1e-15) 
+                    filteredElem_smock.Append(elemGraphVInd);                
+            });
+            filteredElem_smock.deep_copy_to(Elem_smock);
+            
         }
         Write_TriMesh_Obj(X, Elem_smock, "visualize.obj");
         std::cout << "NUmber of Filtered Smocking constraints: " << Elem_smock.size << ", " << Elem_smock_unmapped.size << std::endl;
@@ -1499,9 +1548,12 @@ T Initialize_Discrete_Shell_Smock(
             Find_Surface_Primitives(X.size, Elem, boundaryNode, edge, boundaryTri);
         }
         if(!use_S2)
-            Compute_Discrete_Shell_Inv_Basis_Smock<T, dim, KL>(X, X_smock, Elem, Elem_smock, edge2tri, edge, edgeStencil, edgeInfo, elemAttr, elemAttr_smock, use_S2);
+            Compute_Discrete_Shell_Inv_Basis_Smock<T, dim, KL>(X, X_smock, Elem, Elem_smock, edge2tri, edge, edgeStencil, edgeInfo, elemAttr, elemAttr_smock, Smock_pattern, use_S2);
+        else if (!use_dist)
+            Compute_Discrete_Shell_Inv_Basis_Smock<T, dim, KL>(X, X_smock, Elem, Elem_smock_unmapped, edge2tri, edge, edgeStencil, edgeInfo, elemAttr, elemAttr_smock, Smock_pattern, use_S2);
         else
-            Compute_Discrete_Shell_Inv_Basis_Smock<T, dim, KL>(X, X_smock, Elem, Elem_smock_unmapped, edge2tri, edge, edgeStencil, edgeInfo, elemAttr, elemAttr_smock, use_S2);
+            Compute_Discrete_Shell_Inv_Basis_Smock<T, dim, KL>(X, X_smock, Elem, Elem_smock, edge2tri, edge, edgeStencil, edgeInfo, elemAttr, elemAttr_smock, Smock_pattern, use_S2, use_dist);
+
         // mass matrix and body force
         std::vector<Eigen::Triplet<T>> triplets;
         b.resize(0);

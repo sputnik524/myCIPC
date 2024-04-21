@@ -158,6 +158,7 @@ class FEMDiscreteShellBase(SimulationBase):
         self.uniform_stitching_ratio_smock = 1.0
         self.if_contact = True
         self.use_s2 = False
+        self.use_dist = False
 
     def add_shell_3D(self, filePath, translate, rotCenter, rotAxis, rotDeg): # 3D
         return FEM.DiscreteShell.Add_Shell(filePath, translate, Vector3d(1, 1, 1), rotCenter, rotAxis, rotDeg, self.X, self.Elem, self.compNodeRange)
@@ -242,13 +243,13 @@ class FEMDiscreteShellBase(SimulationBase):
 
         elif smock:
             print("Init with smock mode!")
-            if self.use_s2:
-                FEM.DiscreteShell.Add_Smocking_Constraint(filepath_smock, filepath_smock_pattern, self.X_smocking, self.Elem_smock, self.Elem_smock_unmapped, self.smock_size, self.uniform_stitching_ratio_smock, self.stitchInfo, self.stitchRatio)
+            if self.use_s2 or self.use_dist:
+                FEM.DiscreteShell.Add_Smocking_Constraint(filepath_smock, filepath_smock_pattern, self.X_smocking, self.Elem_smock, self.Elem_smock_unmapped, self.smock_size, self.Smock_pattern, self.uniform_stitching_ratio_smock, self.stitchInfo, self.stitchRatio)
             else:    
                 FEM.DiscreteShell.Add_Smock_Constraint(filepath_smock, filepath_smock_pattern, self.Elem_smock, self.smock_size , self.if_contact)
             self.dHat2 = FEM.DiscreteShell.Initialize_Shell_Hinge_EIPC_Smock(p_density, E, nu, thickness, self.dt, self.dHat2, self.X, self.X_smocking, self.Elem, self.Elem_smock, self.Elem_smock_unmapped, self.segs, \
             self.edge2tri, self.edgeStencil, self.edgeInfo, self.nodeAttr, self.massMatrix, self.gravity, self.bodyForce, \
-            self.elemAttr, self.elemAttr_smock, self.elasticity, self.elasticity_smock, self.kappa, self.smock_cons, self.use_s2)
+            self.elemAttr, self.elemAttr_smock, self.elasticity, self.elasticity_smock, self.kappa, self.smock_cons, self.Smock_pattern, self.use_s2, self.use_dist)
             # if self.use_s2:
             #     # print("The smocking stitching size: ", self.stitchInfo, "\n")
             #     FEM.DiscreteShell.vis_stitching(self.X, self.Elem_smock, self.stitchInfo)
