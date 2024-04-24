@@ -64,6 +64,40 @@ VECTOR<int, 4> Add_Discrete_Shell_3D(
     return counter;
 }
 
+template <class T, int dim = 3>
+void close_cyn(MESH_ELEM<dim - 1>& Elem, int mesh_size, bool xcurve = true){
+    MESH_ELEM<dim - 1> closeElem;
+    // closeElem.resize(2 * (mesh_size - 1));
+    for(int i = 0; i < mesh_size-1; i++){
+        
+        VECTOR<int, 3> tri0,tri1;
+        if(xcurve){
+            tri0[0] = i * mesh_size;
+            tri0[1] = (i+1) * mesh_size - 1;
+            tri0[2] = (i+2) * mesh_size - 1;
+
+            tri1[0] = i * mesh_size;
+            tri1[1] = (i+1) * mesh_size;
+            tri1[2] = (i+1) * mesh_size - 1;
+        }
+
+        else{
+            tri0[0] = i;
+            tri0[1] = mesh_size * (mesh_size - 1) + i + 1;
+            tri0[2] = i+1;
+
+            tri1[0] = i;
+            tri1[1] = mesh_size * (mesh_size - 1) + i;
+            tri1[2] = mesh_size * (mesh_size - 1) + i + 1;
+        }
+
+        closeElem.Append(tri0);
+        closeElem.Append(tri1);
+
+    }
+    Append_Attribute(closeElem, Elem);
+}
+
 
 template <class T, int dim = 3>
 void non_manifold(MESH_NODE<T, dim>& X, MESH_ELEM<dim - 1>& Elem, MESH_ELEM<dim - 1>& Elem_smock)
@@ -755,12 +789,23 @@ template <class T, int dim = 3>
 void offset_smocking(VECTOR<T, dim> offset_vec, MESH_NODE<T, dim>& X, std::vector<VECTOR<int, 3>>& stitchNodes){
     // std::cout << "Offset input planar mesh with smocking size:" << stitchNodes.size() << std::endl;
     for(int i = 0; i < stitchNodes.size(); i++){
-        VECTOR<T, dim>& X1 = std::get<0>(X.Get_Unchecked(stitchNodes[i][0]));
-        VECTOR<T, dim>& X2 = std::get<0>(X.Get_Unchecked(stitchNodes[i][1]));
-        // X1[1] -= 0.005;
-        // X2[1] -= 0.005;
-        X1 += offset_vec;
-        X2 += offset_vec;
+        int node_0_idx = stitchNodes[i][0];
+        int node_1_idx = stitchNodes[i][1];
+
+        VECTOR<T, dim>& X1_0 = std::get<0>(X.Get_Unchecked(node_0_idx));
+        VECTOR<T, dim>& X1_1 = std::get<0>(X.Get_Unchecked(node_0_idx + 1));
+        VECTOR<T, dim>& X1_2 = std::get<0>(X.Get_Unchecked(node_0_idx + 130)); // hardcode fine mesh size
+        
+        VECTOR<T, dim>& X2_0 = std::get<0>(X.Get_Unchecked(node_1_idx));
+        VECTOR<T, dim>& X2_1 = std::get<0>(X.Get_Unchecked(node_1_idx + 1));
+        VECTOR<T, dim>& X2_2 = std::get<0>(X.Get_Unchecked(node_1_idx + 130));
+
+        VECTOR<T, dim> N1,N2; // Offset along normal for non-planar mesh 
+        N1 = cross(X1_1 - X1_0, X1_2 - X1_0);
+        N2 = cross(X2_1 - X2_0, X2_2 - X2_0);
+
+        X1_0 += offset_vec[2] * N1.Normalized();
+        X2_0 += offset_vec[2] * N2.Normalized();
         // std::cout << "after smocking: " << X1[0] << X1[1] << X1[2] << std::endl;
     }
 }
@@ -1193,7 +1238,7 @@ void Compute_Discrete_Shell_Inv_Basis_Smock(
 
             else
             {   
-                IB = compute_ref(elemVInd, X, Smock_pattern);
+                IB = compute_ref(elemVInd, X_smock, Smock_pattern);
                 std::cout << "IB det: " << abs(IB.determinant()) << std::endl;
             }
             // const VECTOR<T, dim> E01 = X2 - X1;
@@ -1518,7 +1563,7 @@ T Initialize_Discrete_Shell_Smock(
             Elem_smock_graph.Each([&](int id, auto data){
                 auto &[elemGraphVInd] = data;
                 MATRIX<T, dim - 1> IB;
-                IB = compute_ref(elemGraphVInd, X, Smock_pattern);
+                IB = compute_ref(elemGraphVInd, X_smock, Smock_pattern);
                 if(abs(IB.determinant()) > 1e-15) 
                     filteredElem_smock.Append(elemGraphVInd);                
             });
@@ -2407,6 +2452,7 @@ void Export_Discrete_Shell(py::module& m) {
     shell_m.def("Add_Stitching_witbody", &Add_stitching_withbody<double>);
     shell_m.def("vis_Stitching_witbody", &vis_stitching_withbody<double>);
     shell_m.def("vis_stitching", &vis_stitching<double>);
+    shell_m.def("close_cyn", &close_cyn<double>);
     shell_m.def("Add_Shell", &Add_Discrete_Shell_3D<double>);
     shell_m.def("Add_Shell_withSmock", &Add_Discrete_Shell_3D_withSmock<double>);
     shell_m.def("reload_Shell_withSmock", &override_Shell_3D_withSmock<double>);

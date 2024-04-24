@@ -166,6 +166,9 @@ class FEMDiscreteShellBase(SimulationBase):
     def add_shell_with_scale_3D(self, filePath, translate, scale, rotCenter, rotAxis, rotDeg):
         return FEM.DiscreteShell.Add_Shell(filePath, translate, scale, rotCenter, rotAxis, rotDeg, self.X, self.Elem, self.compNodeRange)
     
+    def close_cynlinder(self, xcurve):
+        return FEM.DiscreteShell.close_cyn(self.Elem, self.fine_mesh_res, xcurve)
+    
     def add_shell_with_scale_3D_smock(self, filePath, filePath_smock, translate, scale, rotCenter, rotAxis, rotDeg):
         return FEM.DiscreteShell.Add_Shell_withSmock(filePath, filePath_smock, translate, scale, rotCenter, rotAxis, rotDeg, self.X, self.Elem, self.compNodeRange, self.Smock_pattern)
     
