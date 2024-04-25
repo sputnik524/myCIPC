@@ -163,6 +163,7 @@ bool Compute_IncPotential(
     const VECTOR<T, 3>& fiberLimit,
     VECTOR<T, 2>& s, VECTOR<T, 2>& sHat, VECTOR<T, 2>& kappa_s,
     const std::vector<bool>& DBCb,
+    MESH_NODE<T, dim>& X_rest,
     MESH_NODE<T, dim>& X,
     MESH_NODE<T, dim>& Xtilde,
     MESH_NODE_ATTR<T, dim>& nodeAttr,
@@ -262,6 +263,11 @@ bool Compute_IncPotential(
         // garment
         std::cout << "Size of the stitching INfo: " << stitchInfo.size() << std::endl;
         Compute_Stitch_Energy(X, stitchInfo, stitchRatio, DBCb, k_stitch, h, value);
+
+        // pin corners
+        std::cout << "Pin corners." << std::endl;
+        Compute_Pin_Energy(X_rest,X,pinInfo,DBCb,k_pin, h, value);
+
     }
 
     if (staticSolve) {
@@ -433,6 +439,7 @@ void Compute_IncPotential_Gradient(
     const VECTOR<T, 3>& fiberLimit,
     VECTOR<T, 2>& s, VECTOR<T, 2>& sHat, VECTOR<T, 2>& kappa_s,
     const std::vector<bool>& DBCb,
+    MESH_NODE<T, dim>& X_rest,
     MESH_NODE<T, dim>& X,
     MESH_NODE<T, dim>& Xtilde,
     MESH_NODE_ATTR<T, dim>& nodeAttr,
@@ -511,6 +518,9 @@ void Compute_IncPotential_Gradient(
 
         // garment
         Compute_Stitch_Gradient(X, stitchInfo, stitchRatio, DBCb, k_stitch, h, nodeAttr);
+
+        // pin corner
+        Compute_Pin_Gradient(X_rest, X, pinInfo, DBCb, k_pin, h, nodeAttr);
     }
 
     // inertia
@@ -687,6 +697,7 @@ void Compute_IncPotential_Hessian(
     const std::vector<bool>& DBCb,
     const std::vector<bool>& DBCb_fixed,
     T DBCStiff,
+    MESH_NODE<T, dim>& X_rest,
     MESH_NODE<T, dim>& X,
     MESH_NODE<T, dim>& Xn,
     MESH_NODE<T, dim>& Xtilde,
@@ -773,6 +784,10 @@ void Compute_IncPotential_Hessian(
 
         // garment
         Compute_Stitch_Hessian(X, stitchInfo, stitchRatio, DBCb, k_stitch, h, projectSPD, triplets);
+
+        // pin corner
+        Compute_Pin_Hessian(X_rest, X, pinInfo, DBCb, k_pin, h, projectSPD, triplets);
+        
     }
 
     if (withCollision) {

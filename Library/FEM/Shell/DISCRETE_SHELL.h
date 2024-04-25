@@ -4,6 +4,7 @@
 
 #include <FEM/Shell/Rod/DISCRETE_ROD.h>
 #include <FEM/Shell/DISCRETE_PARTICLE.h>
+#include <FEM/Shell/PIN.h>
 
 #include <FEM/Shell/IMPLICIT_EULER.h>
 #include <FEM/Shell/SPLITTING_IE.h>
