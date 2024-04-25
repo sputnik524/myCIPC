@@ -27,7 +27,7 @@ if __name__ == "__main__":
         bendEMult = float(sys.argv[5])
 
     sim.mu = 0.0
-    sim.PNTol = 2e-3
+    sim.PNTol = 1e-3 # cannot be too big !
 
     # determine the smock pattern type
     smock_sizes = [48,48,64,72,48,36,54]
@@ -46,9 +46,10 @@ if __name__ == "__main__":
 
     sim.muComp = StdVectorXd([0, 0, sim.mu,  0, 0, sim.mu,  sim.mu, sim.mu, 0.1])
 
-    sim.dt = 0.005
-    sim.k_stitch = 800
-    sim.frame_dt = 0.005
+    sim.dt = 0.003
+    sim.k_stitch = 1000
+    sim.k_pin = 100
+    sim.frame_dt = 0.003
     sim.frame_num = 5
     sim.withCollision = True
     sim.smock = True
@@ -61,12 +62,16 @@ if __name__ == "__main__":
     sim.use_dist = True
 
     if(solve_static):
+        sim.dt = 0.01
+        sim.smock_cons = 1.0
         sim.k_stitch = 8e6
         sim.frame_num = 1
         sim.staticSolve = True
         sim.PNTol = 1e-4
         sim.withCollision = False
+        sim.k_pin = 1e5
     
+    sim.add_corner_pin() # only for planar mesh
     # Rescale S2!
     sim.initialize(sim.cloth_density_iso[clothI], sim.cloth_Ebase_iso[clothI] * membEMult,
         sim.cloth_nubase_iso[clothI], sim.cloth_thickness_iso[clothI], 0, smock = sim.smock, filepath_smock = "input/"+smock_name +"/S3_rescaled.obj", filepath_smock_pattern = "input/"+smock_name +"/S1.obj")

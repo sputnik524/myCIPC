@@ -184,8 +184,10 @@ bool Compute_IncPotential(
     const std::vector<VECTOR<int, 3>>& rodHinge,
     const std::vector<VECTOR<T, 3>>& rodHingeInfo,
     const std::vector<VECTOR<int, 3>>& stitchInfo,
+    const std::vector<int>& pinInfo,
     const std::vector<T>& stitchRatio,
     T k_stitch,
+    T k_pin,
     T& value,
     MESH_ELEM<dim - 1>& Elem_smock,
     MESH_ELEM_ATTR<T, dim - 1>& elemAttr_smock,
@@ -265,7 +267,7 @@ bool Compute_IncPotential(
         Compute_Stitch_Energy(X, stitchInfo, stitchRatio, DBCb, k_stitch, h, value);
 
         // pin corners
-        std::cout << "Pin corners." << std::endl;
+        std::cout << "Pin corners with size:" << pinInfo.size() << std::endl;
         Compute_Pin_Energy(X_rest,X,pinInfo,DBCb,k_pin, h, value);
 
     }
@@ -460,8 +462,10 @@ void Compute_IncPotential_Gradient(
     const std::vector<VECTOR<int, 3>>& rodHinge,
     const std::vector<VECTOR<T, 3>>& rodHingeInfo,
     const std::vector<VECTOR<int, 3>>& stitchInfo,
+    const std::vector<int>& pinInfo,
     const std::vector<T>& stitchRatio,
     T k_stitch,
+    T k_pin,
     MESH_ELEM<dim - 1>& Elem_smock,
     MESH_ELEM_ATTR<T, dim - 1>& elemAttr_smock,
     FIXED_COROTATED<T, dim - 1>& elasticityAttr_smock, bool smock)
@@ -723,8 +727,10 @@ void Compute_IncPotential_Hessian(
     const std::vector<VECTOR<int, 3>>& rodHinge,
     const std::vector<VECTOR<T, 3>>& rodHingeInfo,
     const std::vector<VECTOR<int, 3>>& stitchInfo,
+    const std::vector<int>& pinInfo,
     const std::vector<T>& stitchRatio,
     T k_stitch,
+    T k_pin,
     bool projectSPD,
     CSR_MATRIX<T>& sysMtr,
     MESH_ELEM<dim - 1>& Elem_smock,

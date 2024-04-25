@@ -106,7 +106,9 @@ class FEMDiscreteShellBase(SimulationBase):
         self.split = False
 
         self.stitchInfo = StdVectorVector3i()
+        self.pinInfo = StdVectorXi()
         self.stitchRatio = StdVectorXd()
+        self.k_pin = 10
         self.k_stitch = 10
 
         self.seqDBC = -1
@@ -151,6 +153,7 @@ class FEMDiscreteShellBase(SimulationBase):
         self.smock_size = 130
 
         # smocking pattern data
+        # self.add_corner_pin_ = False # only for planar smocking
         self.coarse_mesh_res = 21
         self.fine_rate = 5
         self.fine_mesh_res = self.coarse_mesh_res * self.fine_rate + 1 
@@ -168,6 +171,9 @@ class FEMDiscreteShellBase(SimulationBase):
     
     def close_cynlinder(self, xcurve):
         return FEM.DiscreteShell.close_cyn(self.Elem, self.fine_mesh_res, xcurve)
+    
+    def add_corner_pin(self):
+        return FEM.DiscreteShell.Add_corner_pin(self.pinInfo, self.fine_mesh_res)
     
     def add_shell_with_scale_3D_smock(self, filePath, filePath_smock, translate, scale, rotCenter, rotAxis, rotDeg):
         return FEM.DiscreteShell.Add_Shell_withSmock(filePath, filePath_smock, translate, scale, rotCenter, rotAxis, rotDeg, self.X, self.Elem, self.compNodeRange, self.Smock_pattern)
@@ -401,10 +407,10 @@ class FEMDiscreteShellBase(SimulationBase):
                     self.edge2tri, self.edgeStencil, self.edgeInfo, \
                     self.thickness, self.bendingStiffMult, self.fiberStiffMult, self.inextLimit, self.s, self.sHat, self.kappa_s, \
                     self.bodyForce, self.dt, self.PNTol, self.withCollision, self.dHat2, self.kappa, self.mu, self.epsv2, self.fricIterAmt, \
-                    self.compNodeRange, self.muComp, self.staticSolve, \
+                    self.compNodeRange, self.muComp, self.staticSolve, self.X0,\
                     self.X, self.nodeAttr, self.massMatrix, self.elemAttr, self.elasticity, \
                     self.tet, self.tetAttr, self.tetElasticity, self.rod, self.rodInfo, \
-                    self.rodHinge, self.rodHingeInfo, self.stitchInfo, self.stitchRatio, self.k_stitch,\
+                    self.rodHinge, self.rodHingeInfo, self.stitchInfo, self.pinInfo, self.stitchRatio, self.k_stitch, self.k_pin,\
                     self.discrete_particle, self.output_folder, self.Elem_smock, self.elemAttr_smock, self.elasticity_smock, self.smock)
             
             else:
@@ -446,9 +452,9 @@ class FEMDiscreteShellBase(SimulationBase):
                         self.thickness, self.bendingStiffMult, self.fiberStiffMult, self.inextLimit, self.s, self.sHat, self.kappa_s, \
                         self.bodyForce, self.dt, self.PNTol, self.withCollision, self.dHat2, self.kappa, self.mu, self.epsv2, self.fricIterAmt, \
                         self.compNodeRange, self.muComp, self.staticSolve, \
-                        self.X, self.nodeAttr, self.massMatrix, self.elemAttr, self.elasticity, \
+                        self.X0, self.X, self.nodeAttr, self.massMatrix, self.elemAttr, self.elasticity, \
                         self.tet, self.tetAttr, self.tetElasticity, self.rod, self.rodInfo, \
-                        self.rodHinge, self.rodHingeInfo, self.stitchInfo, self.stitchRatio, self.k_stitch,\
+                        self.rodHinge, self.rodHingeInfo, self.stitchInfo,self.pinInfo, self.stitchRatio, self.k_stitch, self.k_pin,\
                         self.discrete_particle, self.output_folder, self.Elem_smock, self.elemAttr_smock, self.elasticity_smock, self.smock)
                 
                 else:

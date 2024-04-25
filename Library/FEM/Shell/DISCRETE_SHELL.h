@@ -2451,6 +2451,7 @@ void Export_Discrete_Shell(py::module& m) {
     shell_m.def("Add_Garment", &Add_Garment_3D<double>);
     shell_m.def("Add_Stitching", &Add_stitching<double>);
     shell_m.def("Add_Stitching_witbody", &Add_stitching_withbody<double>);
+    shell_m.def("Add_corner_pin", &add_corner_pin);
     shell_m.def("vis_Stitching_witbody", &vis_stitching_withbody<double>);
     shell_m.def("vis_stitching", &vis_stitching<double>);
     shell_m.def("close_cyn", &close_cyn<double>);

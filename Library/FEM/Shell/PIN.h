@@ -4,6 +4,13 @@
 
 namespace JGSL {
 
+template <int dim = 3>
+void add_corner_pin(std::vector<int>& pinInfo, int meshsize){
+    std::vector<int> pins = {0, meshsize - 1, meshsize * (meshsize - 1) ,meshsize * meshsize - 1};
+    pinInfo.insert(pinInfo.end(), pins.begin(), pins.end());
+    std::cout << "After adding corner pin:" << pinInfo.size() << std::endl;
+}
+
 template <class T, int dim = 3>
 void Compute_Pin_Energy(
     MESH_NODE<T, dim>& X_rest,

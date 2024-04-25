@@ -181,12 +181,15 @@ void Line_Search(
     const std::vector<VECTOR<int, 3>>& rodHinge,
     const std::vector<VECTOR<T, 3>>& rodHingeInfo,
     const std::vector<VECTOR<int, 3>>& stitchInfo,
+    const std::vector<int>& pinInfo,
     const std::vector<T>& stitchRatio,
     T k_stitch,
+    T k_pin,
     const std::vector<int>& particle,
     const std::string& outputFolder,
     std::vector<T>& sol,
     std::vector<bool>& DBCb,
+    MESH_NODE<T, dim>& X_rest,
     MESH_NODE<T, dim>& Xn,
     MESH_NODE<T, dim>& Xtilde,
     std::vector<VECTOR<int, dim + 1>>& constraintSet,
@@ -227,10 +230,10 @@ void Line_Search(
                 }
             });
             valid = Compute_IncPotential<T, dim, KL, elasticIPC, flow>(Elem, h, edge2tri, edgeStencil, edgeInfo, thickness, bendingStiffMult, fiberStiffMult, 
-                fiberLimit, s, sHat, kappa_s, DBCb, X, Xtilde, nodeAttr, M, elemAttr, elasticityAttr, 
+                fiberLimit, s, sHat, kappa_s, DBCb, X_rest, X, Xtilde, nodeAttr, M, elemAttr, elasticityAttr, 
                 false, constraintSet, stencilInfo, dHat2, kappa, staticSolve, b, 
                 tet, tetAttr, tetElasticityAttr, rod, rodInfo, rodHinge, rodHingeInfo, 
-                stitchInfo, stitchRatio, k_stitch, E, Elem_smock, elemAttr_smock, elasticityAttr_smock, smock);
+                stitchInfo, pinInfo, stitchRatio, k_stitch, k_pin, E, Elem_smock, elemAttr_smock, elasticityAttr_smock, smock);
             if (!valid) {
                 alpha /= 2.0;
             }
@@ -253,11 +256,11 @@ void Line_Search(
                 x[2] = xprev[2] + alpha * sol[id * dim + 2];
             }
         });
-        valid = Compute_IncPotential<T, dim, KL, elasticIPC, flow>(Elem, h, edge2tri, edgeStencil, edgeInfo, thickness, bendingStiffMult, fiberStiffMult, fiberLimit,
-            s, sHat, kappa_s, DBCb, X, Xtilde, nodeAttr, M, elemAttr, elasticityAttr, 
-            false, constraintSet, stencilInfo, dHat2, kappa, staticSolve, b, 
-            tet, tetAttr, tetElasticityAttr, rod, rodInfo, rodHinge, rodHingeInfo, 
-            stitchInfo, stitchRatio, k_stitch, E, Elem_smock, elemAttr_smock, elasticityAttr_smock, smock);
+        valid = Compute_IncPotential<T, dim, KL, elasticIPC, flow>(Elem, h, edge2tri, edgeStencil, edgeInfo, thickness, bendingStiffMult, fiberStiffMult, 
+                fiberLimit, s, sHat, kappa_s, DBCb, X_rest, X, Xtilde, nodeAttr, M, elemAttr, elasticityAttr, 
+                false, constraintSet, stencilInfo, dHat2, kappa, staticSolve, b, 
+                tet, tetAttr, tetElasticityAttr, rod, rodInfo, rodHinge, rodHingeInfo, 
+                stitchInfo, pinInfo, stitchRatio, k_stitch, k_pin, E, Elem_smock, elemAttr_smock, elasticityAttr_smock, smock);
         if (valid) {
             if (withCollision) {
                 Compute_Constraint_Set<T, dim, false, elasticIPC>(X, nodeAttr, boundaryNode, boundaryEdge, boundaryTri, 
@@ -275,10 +278,10 @@ void Line_Search(
                 }
             }
             valid = Compute_IncPotential<T, dim, KL, elasticIPC, flow>(Elem, h, edge2tri, edgeStencil, edgeInfo, thickness, bendingStiffMult, fiberStiffMult, 
-                fiberLimit, s, sHat, kappa_s, DBCb, X, Xtilde, nodeAttr, M, elemAttr, elasticityAttr, 
+                fiberLimit, s, sHat, kappa_s, DBCb, X_rest, X, Xtilde, nodeAttr, M, elemAttr, elasticityAttr, 
                 withCollision, constraintSet, stencilInfo, dHat2, kappa, staticSolve, b, 
                 tet, tetAttr, tetElasticityAttr, rod, rodInfo, rodHinge, rodHingeInfo, 
-                stitchInfo, stitchRatio, k_stitch, E, Elem_smock, elemAttr_smock, elasticityAttr_smock, smock);
+                stitchInfo, pinInfo, stitchRatio, k_stitch, k_pin, E, Elem_smock, elemAttr_smock, elasticityAttr_smock, smock);
             if (valid && withCollision && mu > 0) {
                 Compute_Friction_Potential(X, Xn, fricConstraintSet, closestPoint, tanBasis, normalForce, epsv2 * h * h, mu, E);
             }
@@ -1066,6 +1069,7 @@ int Advance_One_Step_IE_Discrete_Shell_smock(
     const std::vector<int>& compNodeRange,
     const std::vector<T>& muComp,
     bool staticSolve,
+    MESH_NODE<T, dim>& X_rest,
     MESH_NODE<T, dim>& X, // mid-surface node coordinates
     MESH_NODE_ATTR<T, dim>& nodeAttr,
     CSR_MATRIX<T>& M, // mass matrix
@@ -1079,8 +1083,10 @@ int Advance_One_Step_IE_Discrete_Shell_smock(
     const std::vector<VECTOR<int, 3>>& rodHinge,
     const std::vector<VECTOR<T, 3>>& rodHingeInfo,
     const std::vector<VECTOR<int, 3>>& stitchInfo,
+    const std::vector<int>& pinInfo,
     const std::vector<T>& stitchRatio,
     T k_stitch,
+    T k_pin,
     const std::vector<int>& particle,
     const std::string& outputFolder,
     MESH_ELEM<dim - 1>& Elem_smock,
@@ -1329,10 +1335,10 @@ int Advance_One_Step_IE_Discrete_Shell_smock(
     }
     T Eprev;
     Compute_IncPotential<T, dim, KL, elasticIPC, flow>(Elem, h, edge2tri, edgeStencil, edgeInfo, thickness, bendingStiffMult, fiberStiffMult, fiberLimit,
-        s, sHat, kappa_s, DBCb, X, Xtilde, nodeAttr, M, elemAttr, elasticityAttr, 
+        s, sHat, kappa_s, DBCb, X_rest, X, Xtilde, nodeAttr, M, elemAttr, elasticityAttr, 
         withCollision, constraintSet, stencilInfo, dHat2, kappa, staticSolve, b, 
         tet, tetAttr, tetElasticityAttr, rod, rodInfo, rodHinge, rodHingeInfo, 
-        stitchInfo, stitchRatio, k_stitch, Eprev, Elem_smock, elemAttr_smock, elasticityAttr_smock, smock);
+        stitchInfo, pinInfo, stitchRatio, k_stitch, k_pin, Eprev, Elem_smock, elemAttr_smock, elasticityAttr_smock, smock);
     if (withCollision && mu > 0) {
         Compute_Friction_Potential(X, Xn, fricConstraintSet, closestPoint, tanBasis, normalForce, epsv2 * h * h, mu, Eprev);
     }
@@ -1357,10 +1363,10 @@ int Advance_One_Step_IE_Discrete_Shell_smock(
 
         // compute gradient
         Compute_IncPotential_Gradient<T, dim, KL, elasticIPC, flow>(Elem, h, edge2tri, edgeStencil, edgeInfo, thickness, bendingStiffMult, fiberStiffMult, fiberLimit,
-            s, sHat, kappa_s, DBCb, X, Xtilde, nodeAttr, M, elemAttr, 
+            s, sHat, kappa_s, DBCb, X_rest, X, Xtilde, nodeAttr, M, elemAttr, 
             withCollision, constraintSet, stencilInfo, dHat2, kappa, staticSolve, b, elasticityAttr, 
             tet, tetAttr, tetElasticityAttr, rod, rodInfo, rodHinge, rodHingeInfo,
-            stitchInfo, stitchRatio, k_stitch, Elem_smock, elemAttr_smock, elasticityAttr_smock, smock);
+            stitchInfo, pinInfo, stitchRatio, k_stitch, k_pin, Elem_smock, elemAttr_smock, elasticityAttr_smock, smock);
         if (withCollision && mu > 0) {
             Compute_Friction_Gradient(X, Xn, fricConstraintSet, closestPoint, tanBasis, normalForce, epsv2 * h * h, mu, nodeAttr);
         }
@@ -1394,11 +1400,11 @@ int Advance_One_Step_IE_Discrete_Shell_smock(
         // compute Hessian
         if (!useGD) {
             Compute_IncPotential_Hessian<T, dim, KL, elasticIPC, flow>(Elem, h, edge2tri, edgeStencil, edgeInfo, thickness, bendingStiffMult, fiberStiffMult, fiberLimit,
-                s, sHat, kappa_s, DBC, DBCb, DBCb_fixed, DBCStiff, X, Xn, Xtilde, nodeAttr, M, elemAttr, 
+                s, sHat, kappa_s, DBC, DBCb, DBCb_fixed, DBCStiff, X_rest, X, Xn, Xtilde, nodeAttr, M, elemAttr, 
                 withCollision, constraintSet, stencilInfo, fricConstraintSet, closestPoint, tanBasis, normalForce,
                 dHat2, kappa, mu, epsv2, staticSolve, b, elasticityAttr, 
                 tet, tetAttr, tetElasticityAttr, rod, rodInfo, rodHinge, rodHingeInfo, 
-                stitchInfo, stitchRatio, k_stitch, true, sysMtr, Elem_smock, elemAttr_smock, elasticityAttr_smock, smock);
+                stitchInfo, pinInfo, stitchRatio, k_stitch, k_pin, true, sysMtr, Elem_smock, elemAttr_smock, elasticityAttr_smock, smock);
         }
 
         // compute search direction
@@ -1459,8 +1465,8 @@ int Advance_One_Step_IE_Discrete_Shell_smock(
             thickness, bendingStiffMult, fiberStiffMult, fiberLimit, s, sHat, kappa_s, 
             b, h, NewtonTol, withCollision, dHat2, kappaVec, mu, epsv2, compNodeRange, muComp, 
             staticSolve, X, nodeAttr, M, elemAttr, elasticityAttr, tet, tetAttr, tetElasticityAttr, 
-            rod, rodInfo, rodHinge, rodHingeInfo, stitchInfo, stitchRatio, k_stitch, particle, outputFolder,
-            sol, DBCb, Xn, Xtilde, constraintSet, stencilInfo, constraintSetPTEE, kappa, 
+            rod, rodInfo, rodHinge, rodHingeInfo, stitchInfo, pinInfo, stitchRatio, k_stitch, k_pin, particle, outputFolder,
+            sol, DBCb, X_rest, Xn, Xtilde, constraintSet, stencilInfo, constraintSetPTEE, kappa, 
             boundaryNode, boundaryEdge, boundaryTri, NNExclusion, BNArea, BEArea, BTArea, codimBNStartInd, 
             fricConstraintSet, closestPoint, tanBasis, normalForce, DBCStiff, Eprev, alpha, feasibleAlpha, Elem_smock, elemAttr_smock, elasticityAttr_smock, smock);
 
@@ -1481,10 +1487,10 @@ int Advance_One_Step_IE_Discrete_Shell_smock(
                     kappaVec[0] *= 2;
 
                     Compute_IncPotential<T, dim, KL, elasticIPC, flow>(Elem, h, edge2tri, edgeStencil, edgeInfo, thickness, bendingStiffMult, fiberStiffMult, fiberLimit,
-                        s, sHat, kappa_s, DBCb, X, Xtilde, nodeAttr, M, elemAttr, elasticityAttr, 
+                        s, sHat, kappa_s, DBCb, X_rest, X, Xtilde, nodeAttr, M, elemAttr, elasticityAttr, 
                         withCollision, constraintSet, stencilInfo, dHat2, kappa, staticSolve, b, 
                         tet, tetAttr, tetElasticityAttr, rod, rodInfo, rodHinge, rodHingeInfo, 
-                        stitchInfo, stitchRatio, k_stitch, Eprev, Elem_smock, elemAttr_smock, elasticityAttr_smock, smock);
+                        stitchInfo, pinInfo, stitchRatio, k_stitch, k_pin,  Eprev, Elem_smock, elemAttr_smock, elasticityAttr_smock, smock);
                     if (withCollision && mu > 0) {
                         Compute_Friction_Potential(X, Xn, fricConstraintSet, closestPoint, tanBasis, normalForce, epsv2 * h * h, mu, Eprev);
                     }
@@ -1531,10 +1537,10 @@ int Advance_One_Step_IE_Discrete_Shell_smock(
                 kappa_s[0] *= 2;
 
                 Compute_IncPotential<T, dim, KL, elasticIPC, flow>(Elem, h, edge2tri, edgeStencil, edgeInfo, thickness, bendingStiffMult, fiberStiffMult, fiberLimit,
-                    s, sHat, kappa_s, DBCb, X, Xtilde, nodeAttr, M, elemAttr, elasticityAttr, 
+                    s, sHat, kappa_s, DBCb, X_rest, X, Xtilde, nodeAttr, M, elemAttr, elasticityAttr, 
                     withCollision, constraintSet, stencilInfo, dHat2, kappa, staticSolve, b, 
                     tet, tetAttr, tetElasticityAttr, rod, rodInfo, rodHinge, rodHingeInfo, 
-                    stitchInfo, stitchRatio, k_stitch, Eprev, Elem_smock, elemAttr_smock, elasticityAttr_smock, smock);
+                    stitchInfo, pinInfo, stitchRatio, k_stitch, k_pin, Eprev, Elem_smock, elemAttr_smock, elasticityAttr_smock, smock);
                 if (withCollision && mu > 0) {
                     Compute_Friction_Potential(X, Xn, fricConstraintSet, closestPoint, tanBasis, normalForce, epsv2 * h * h, mu, Eprev);
                 }
@@ -1638,10 +1644,10 @@ int Advance_One_Step_IE_Discrete_Shell_smock(
                     if (DBCStiff < 1e8) {
                         DBCStiff *= 2;
                         Compute_IncPotential<T, dim, KL, elasticIPC, flow>(Elem, h, edge2tri, edgeStencil, edgeInfo, thickness, bendingStiffMult, fiberStiffMult, fiberLimit,
-                            s, sHat, kappa_s, DBCb, X, Xtilde, nodeAttr, M, elemAttr, elasticityAttr, 
+                            s, sHat, kappa_s, DBCb, X_rest, X, Xtilde, nodeAttr, M, elemAttr, elasticityAttr, 
                             withCollision, constraintSet, stencilInfo, dHat2, kappa, staticSolve, b, 
                             tet, tetAttr, tetElasticityAttr, rod, rodInfo, rodHinge, rodHingeInfo, 
-                            stitchInfo, stitchRatio, k_stitch, Eprev, Elem_smock, elemAttr_smock, elasticityAttr_smock, smock);
+                            stitchInfo, pinInfo, stitchRatio, k_stitch, k_pin, Eprev, Elem_smock, elemAttr_smock, elasticityAttr_smock, smock);
                         if (withCollision && mu > 0) {
                             Compute_Friction_Potential(X, Xn, fricConstraintSet, closestPoint, tanBasis, normalForce, epsv2 * h * h, mu, Eprev);
                         }
@@ -1656,10 +1662,10 @@ int Advance_One_Step_IE_Discrete_Shell_smock(
                 DBCStiff = 0;
 
                 Compute_IncPotential<T, dim, KL, elasticIPC, flow>(Elem, h, edge2tri, edgeStencil, edgeInfo, thickness, bendingStiffMult, fiberStiffMult, 
-                    fiberLimit, s, sHat, kappa_s, DBCb, X, Xtilde, nodeAttr, M, elemAttr, elasticityAttr, 
+                    fiberLimit, s, sHat, kappa_s, DBCb, X_rest, X, Xtilde, nodeAttr, M, elemAttr, elasticityAttr, 
                     withCollision, constraintSet, stencilInfo, dHat2, kappa, staticSolve, b, 
                     tet, tetAttr, tetElasticityAttr, rod, rodInfo, rodHinge, rodHingeInfo, 
-                    stitchInfo, stitchRatio, k_stitch, Eprev, Elem_smock, elemAttr_smock, elasticityAttr_smock, smock);
+                    stitchInfo, pinInfo, stitchRatio, k_stitch, k_pin, Eprev, Elem_smock, elemAttr_smock, elasticityAttr_smock, smock);
                 if (withCollision && mu > 0) {
                     Compute_Friction_Potential(X, Xn, fricConstraintSet, closestPoint, tanBasis, normalForce, epsv2 * h * h, mu, Eprev);
                 }
@@ -1681,10 +1687,10 @@ int Advance_One_Step_IE_Discrete_Shell_smock(
 
                         // compute gradient
                         Compute_IncPotential_Gradient<T, dim, KL, elasticIPC, flow>(Elem, h, edge2tri, edgeStencil, edgeInfo, thickness, bendingStiffMult, fiberStiffMult, fiberLimit,
-                            s, sHat, kappa_s, DBCb, X, Xtilde, nodeAttr, M, elemAttr, 
+                            s, sHat, kappa_s, DBCb, X_rest, X, Xtilde, nodeAttr, M, elemAttr, 
                             withCollision, constraintSet, stencilInfo, dHat2, kappa, staticSolve, b, elasticityAttr, 
                             tet, tetAttr, tetElasticityAttr, rod, rodInfo, rodHinge, rodHingeInfo,
-                            stitchInfo, stitchRatio, k_stitch, Elem_smock, elemAttr_smock, elasticityAttr_smock, smock);
+                            stitchInfo, pinInfo, stitchRatio, k_stitch, k_pin, Elem_smock, elemAttr_smock, elasticityAttr_smock, smock);
                         Compute_Friction_Gradient(X, Xn, fricConstraintSet, closestPoint, tanBasis, normalForce, epsv2 * h * h, mu, nodeAttr);
                         if (DBCStiff) {
                             Compute_DBC_Gradient(X, nodeAttr, DBC, DBCStiff);
@@ -1711,11 +1717,11 @@ int Advance_One_Step_IE_Discrete_Shell_smock(
                         });
                         // compute Hessian
                         Compute_IncPotential_Hessian<T, dim, KL, elasticIPC, flow>(Elem, h, edge2tri, edgeStencil, edgeInfo, thickness, bendingStiffMult, fiberStiffMult, fiberLimit,
-                            s, sHat, kappa_s, DBC, DBCb, DBCb_fixed, DBCStiff, X, Xn, Xtilde, nodeAttr, M, elemAttr, 
+                            s, sHat, kappa_s, DBC, DBCb, DBCb_fixed, DBCStiff, X_rest, X, Xn, Xtilde, nodeAttr, M, elemAttr, 
                             withCollision, constraintSet, stencilInfo, fricConstraintSet, closestPoint, tanBasis, normalForce,
                             dHat2, kappa, mu, epsv2, staticSolve, b, elasticityAttr, 
                             tet, tetAttr, tetElasticityAttr, rod, rodInfo, rodHinge, rodHingeInfo, 
-                            stitchInfo, stitchRatio, k_stitch, true, sysMtr, Elem_smock, elemAttr_smock, elasticityAttr_smock, smock);
+                            stitchInfo, pinInfo, stitchRatio, k_stitch, k_pin, true, sysMtr, Elem_smock, elemAttr_smock, elasticityAttr_smock, smock);
                         // compute search direction
                         {
                             TIMER_FLAG("linearSolve");
@@ -1745,10 +1751,10 @@ int Advance_One_Step_IE_Discrete_Shell_smock(
                         printf("friction updated Newton res = %le, tol = %le\n", L2Norm, NewtonTol);
                         if (L2Norm > NewtonTol) {
                             Compute_IncPotential<T, dim, KL, elasticIPC, flow>(Elem, h, edge2tri, edgeStencil, edgeInfo, thickness, bendingStiffMult, fiberStiffMult, fiberLimit,
-                                s, sHat, kappa_s, DBCb, X, Xtilde, nodeAttr, M, elemAttr, elasticityAttr, 
+                                s, sHat, kappa_s, DBCb, X_rest, X, Xtilde, nodeAttr, M, elemAttr, elasticityAttr, 
                                 withCollision, constraintSet, stencilInfo, dHat2, kappa, staticSolve, b, 
                                 tet, tetAttr, tetElasticityAttr, rod, rodInfo, rodHinge, rodHingeInfo, 
-                                stitchInfo, stitchRatio, k_stitch, Eprev, Elem_smock, elemAttr_smock, elasticityAttr_smock, smock);
+                                stitchInfo, pinInfo, stitchRatio, k_stitch, k_pin, Eprev, Elem_smock, elemAttr_smock, elasticityAttr_smock, smock);
                             Compute_Friction_Potential(X, Xn, fricConstraintSet, closestPoint, tanBasis, normalForce, epsv2 * h * h, mu, Eprev);
                             if (DBCStiff) {
                                 Compute_DBC_Energy(X, nodeAttr, DBC, DBCStiff, Eprev);
