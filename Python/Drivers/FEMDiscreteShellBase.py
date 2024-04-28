@@ -106,8 +106,10 @@ class FEMDiscreteShellBase(SimulationBase):
         self.split = False
 
         self.stitchInfo = StdVectorVector3i()
+        self.stitchInfo_0 = StdVectorVector3i()
         self.pinInfo = StdVectorXi()
         self.stitchRatio = StdVectorXd()
+        self.stitchRatio_0 = StdVectorXd()
         self.k_pin = 10
         self.k_stitch = 10
 
@@ -163,6 +165,10 @@ class FEMDiscreteShellBase(SimulationBase):
         self.use_s2 = False
         self.use_dist = False
 
+        # progressive smocking
+        self.progressive = False
+        self.stitching_seq = StdVectorXi()
+
     def add_shell_3D(self, filePath, translate, rotCenter, rotAxis, rotDeg): # 3D
         return FEM.DiscreteShell.Add_Shell(filePath, translate, Vector3d(1, 1, 1), rotCenter, rotAxis, rotDeg, self.X, self.Elem, self.compNodeRange)
     
@@ -194,6 +200,17 @@ class FEMDiscreteShellBase(SimulationBase):
             FEM.DiscreteShell.vis_Stitching_witbody(self.fine_mesh_res, self.uniform_stitching_ratio, self.stitchInfo, self.stitchRatio, self.smock_size, self.Smock_pattern)
         if vis:
             FEM.DiscreteShell.vis_stitching(self.X, self.Elem, self.stitchInfo)
+    
+    def Progressive_stitching(self, stitching_seq_file=None):
+        # init the stitching seqence
+        # MeshIO.Append_Attribute(self.stitchInfo, self.stitchInfo_0)
+        # MeshIO.Append_Attribute(self.stitchRatio, self.stitchRatio_0)
+        FEM.DiscreteShell.Progressive_stitching(self.stitching_seq, self.smock_size, " ")
+
+    def update_stitching(self):
+        # breakpoint()
+        FEM.DiscreteShell.update_stitchingInfo(self.current_frame, self.stitching_seq, self.stitchInfo, self.stitchRatio, self.stitchInfo_0, self.stitchRatio_0)
+        
 
     def add_mannequin(self, filePath, translate, scale, rotCenter, rotAxis, rotDeg):
         meshCounter = FEM.DiscreteShell.Add_Shell(filePath, translate, scale, rotCenter, rotAxis, rotDeg, self.X, self.Elem, self.compNodeRange)
@@ -253,7 +270,8 @@ class FEMDiscreteShellBase(SimulationBase):
         elif smock:
             print("Init with smock mode!")
             if self.use_s2 or self.use_dist:
-                FEM.DiscreteShell.Add_Smocking_Constraint(filepath_smock, filepath_smock_pattern, self.X_smocking, self.Elem_smock, self.Elem_smock_unmapped, self.smock_size, self.Smock_pattern, self.uniform_stitching_ratio_smock, self.stitchInfo, self.stitchRatio)
+                FEM.DiscreteShell.Add_Smocking_Constraint(filepath_smock, filepath_smock_pattern, self.X_smocking, self.Elem_smock, self.Elem_smock_unmapped, self.smock_size, self.Smock_pattern, \
+                                                          self.uniform_stitching_ratio_smock, self.stitchInfo, self.stitchRatio, self.stitchInfo_0, self.stitchRatio_0)
             else:    
                 FEM.DiscreteShell.Add_Smock_Constraint(filepath_smock, filepath_smock_pattern, self.Elem_smock, self.smock_size , self.if_contact)
             self.dHat2 = FEM.DiscreteShell.Initialize_Shell_Hinge_EIPC_Smock(p_density, E, nu, thickness, self.dt, self.dHat2, self.X, self.X_smocking, self.Elem, self.Elem_smock, self.Elem_smock_unmapped, self.segs, \
@@ -390,6 +408,14 @@ class FEMDiscreteShellBase(SimulationBase):
             MeshIO.Load_Velocity_X0(self.seqDBCPath, self.lv_fn, self.dt, self.X, self.nodeAttr) # calc dx based on x_cur
             FEM.Load_Dirichlet(self.seqDBCPath + '/' + str(self.lv_fn) + '.obj', 0, Vector3d(0, 0, 0), self.DBC)
             self.lv_fn = self.lv_fn + 1
+
+        if self.progressive:
+            self.update_stitching()
+            offset_vec =  Vector3d(0, 0, 0.01)
+            FEM.DiscreteShell.offset_smocking_prog(offset_vec, self.X, self.stitchInfo)
+            # breakpoint()
+            self.write(100)
+
         if self.elasticIPC:
             if self.split:
                 self.PNIterCount = self.PNIterCount + FEM.DiscreteShell.Advance_One_Step_SIE_Hinge_EIPC(self.Elem, self.segs, self.DBC, \

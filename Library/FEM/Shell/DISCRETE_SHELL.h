@@ -5,6 +5,7 @@
 #include <FEM/Shell/Rod/DISCRETE_ROD.h>
 #include <FEM/Shell/DISCRETE_PARTICLE.h>
 #include <FEM/Shell/PIN.h>
+#include <FEM/Shell/PROGRESSIVE.h>
 
 #include <FEM/Shell/IMPLICIT_EULER.h>
 #include <FEM/Shell/SPLITTING_IE.h>
@@ -388,7 +389,7 @@ void Add_Smocking_Constraint(
     const std::string& filePath_smock_pattern, MESH_NODE<T, dim>& X_Smocking,
     MESH_ELEM<dim - 1>& SmockElem, MESH_ELEM<dim - 1>& SmockElem_unmapped, int& smock_size, 
     MESH_ELEM<dim - 1>& Smock_pattern, T uniform_stitching_ratio, std::vector<VECTOR<int, 3>>& stitchNodes, 
-    std::vector<T>& stitchRatio){
+    std::vector<T>& stitchRatio, std::vector<VECTOR<int, 3>>& stitchNodes_0, std::vector<T>& stitchRatio_0){
 
     MESH_NODE<T, dim> newX;
     MESH_ELEM<dim - 1> newElem;
@@ -439,6 +440,10 @@ void Add_Smocking_Constraint(
         }
         
     });
+
+    stitchNodes_0.insert(stitchNodes_0.end(), stitchNodes.begin(), stitchNodes.end());
+    stitchRatio_0.insert(stitchRatio_0.end(), stitchRatio.begin(), stitchRatio.end());
+    std::cout << "After append stitching:" << stitchNodes_0.size() << std::endl;
 }
 
 template <class T, int dim = 3>
@@ -808,6 +813,31 @@ void offset_smocking(VECTOR<T, dim> offset_vec, MESH_NODE<T, dim>& X, std::vecto
         X1_0 += offset_vec[2] * N1.Normalized();
         X2_0 += offset_vec[2] * N2.Normalized();
         // std::cout << "after smocking: " << X1[0] << X1[1] << X1[2] << std::endl;
+    }
+}
+
+template <class T, int dim = 3>
+void offset_smocking_prog(VECTOR<T, dim> offset_vec, MESH_NODE<T, dim>& X, std::vector<VECTOR<int, 3>>& stitchNodes){
+    // assume unit incremental
+    for(int i = stitchNodes.size() - 2; i < stitchNodes.size(); i++){
+        int node_0_idx = stitchNodes[i][0];
+        int node_1_idx = stitchNodes[i][1];
+
+        VECTOR<T, dim>& X1_0 = std::get<0>(X.Get_Unchecked(node_0_idx));
+        VECTOR<T, dim>& X1_1 = std::get<0>(X.Get_Unchecked(node_0_idx + 1));
+        VECTOR<T, dim>& X1_2 = std::get<0>(X.Get_Unchecked(node_0_idx + 130)); // hardcode fine mesh size
+        
+        VECTOR<T, dim>& X2_0 = std::get<0>(X.Get_Unchecked(node_1_idx));
+        VECTOR<T, dim>& X2_1 = std::get<0>(X.Get_Unchecked(node_1_idx + 1));
+        VECTOR<T, dim>& X2_2 = std::get<0>(X.Get_Unchecked(node_1_idx + 130));
+
+        VECTOR<T, dim> N1,N2; // Offset along normal for non-planar mesh 
+        N1 = cross(X1_1 - X1_0, X1_2 - X1_0);
+        N2 = cross(X2_1 - X2_0, X2_2 - X2_0);
+
+        // only offset fixed direction
+        X1_0 += offset_vec;
+        X2_0 += offset_vec;
     }
 }
 
@@ -2455,6 +2485,8 @@ void Export_Discrete_Shell(py::module& m) {
     shell_m.def("vis_Stitching_witbody", &vis_stitching_withbody<double>);
     shell_m.def("vis_stitching", &vis_stitching<double>);
     shell_m.def("close_cyn", &close_cyn<double>);
+    shell_m.def("Progressive_stitching", &progressive_stitching);
+    shell_m.def("update_stitchingInfo", &update_stitchingInfo<double>);
     shell_m.def("Add_Shell", &Add_Discrete_Shell_3D<double>);
     shell_m.def("Add_Shell_withSmock", &Add_Discrete_Shell_3D_withSmock<double>);
     shell_m.def("reload_Shell_withSmock", &override_Shell_3D_withSmock<double>);
@@ -2466,6 +2498,7 @@ void Export_Discrete_Shell(py::module& m) {
     shell_m.def("Initialize_Shell", &Initialize_Discrete_Shell<double, 3, true, false>);
     shell_m.def("Initialize_Garment", &Initialize_Garment<double, 3>);
     shell_m.def("offset_smocking", &offset_smocking<double, 3>);
+    shell_m.def("offset_smocking_prog", &offset_smocking_prog<double, 3>);
     shell_m.def("Initialize_Shell_Hinge", &Initialize_Discrete_Shell<double, 3, false, false>);
     shell_m.def("Update_Normal_Flow_Neumann", &Update_Normal_Flow_Neumann<double, 3>);
     shell_m.def("Update_Material_With_Tex_Shell", &Update_Material_With_Tex_Shell<double, 3>);
