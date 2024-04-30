@@ -268,6 +268,40 @@ void map_smock_pattern(MESH_ELEM<dim - 1>& Elem_smock)
     });
 }
 
+template <int dim = 3>
+void map_smock_pattern_general(MESH_ELEM<dim - 1>& Elem_smock, int coarse_scale)
+{
+    int rows_c = coarse_scale; 
+    int cols_c = coarse_scale;
+    int fine = 9; // TODO: speical treat
+    int rows_f = rows_c * (fine+1);
+    int cols_f = cols_c * (fine+1);
+    int offest_coarse = coarse_scale/2;
+    int offset = offest_coarse + rows_f*offest_coarse;
+   
+
+    Elem_smock.Each([&](int id, auto data){
+        auto &[elemVInd] = data;
+        // std::cout << "mapping smocking index: " << id << " from " <<  elemVInd[0] << " " << elemVInd[1] << std::endl;
+        for(int i = 0; i < 3; i++){
+            if(elemVInd[i] >= 0){
+                int i_s = elemVInd[i] / cols_c;
+                int j_s = elemVInd[i] % cols_c;
+
+                int offset_x = 0;
+                int offset_y = 0;
+                if(i_s > offest_coarse)
+                    offset_x = 1;
+                if(j_s > offest_coarse)
+                    offset_y = 1;
+
+                elemVInd[i] = (i_s * fine * rows_f + j_s * fine + offset + offset_y + offset_x*rows_f) ;
+            }
+        }
+        // std::cout << "mapping smocking index: " << id << " to " <<  elemVInd[0] << " " << elemVInd[1] << std::endl;
+    });
+}
+
 template <class T, int dim = 3>
 VECTOR<int, 4> Add_Discrete_Shell_3D_withSmock(
     const std::string& filePath,
@@ -387,7 +421,7 @@ template <class T, int dim = 3>
 void Add_Smocking_Constraint(
     const std::string& filePath,
     const std::string& filePath_smock_pattern, MESH_NODE<T, dim>& X_Smocking,
-    MESH_ELEM<dim - 1>& SmockElem, MESH_ELEM<dim - 1>& SmockElem_unmapped, int& smock_size, 
+    MESH_ELEM<dim - 1>& SmockElem, int coarse_scale, MESH_ELEM<dim - 1>& SmockElem_unmapped, int& smock_size, 
     MESH_ELEM<dim - 1>& Smock_pattern, T uniform_stitching_ratio, std::vector<VECTOR<int, 3>>& stitchNodes, 
     std::vector<T>& stitchRatio, std::vector<VECTOR<int, 3>>& stitchNodes_0, std::vector<T>& stitchRatio_0){
 
@@ -400,8 +434,8 @@ void Add_Smocking_Constraint(
     Read_TriMesh_Obj_smock(filePath_smock_pattern, smockX, smockElem, smock_pattern);
     Append_Attribute(newElem, SmockElem_unmapped);
 
-    map_smock_pattern<dim>(smock_pattern);
-    map_smock_pattern<dim>(newElem);
+    map_smock_pattern_general<dim>(smock_pattern, coarse_scale);
+    map_smock_pattern_general<dim>(newElem,coarse_scale);
     Append_Attribute(newElem, SmockElem);
     Append_Attribute(newX, X_Smocking);
     Append_Attribute(smock_pattern, Smock_pattern);
@@ -792,7 +826,7 @@ void vis_stitching(MESH_NODE<T, dim>& X, MESH_ELEM<dim - 1>& Elem, std::vector<V
 }
 
 template <class T, int dim = 3>
-void offset_smocking(VECTOR<T, dim> offset_vec, MESH_NODE<T, dim>& X, std::vector<VECTOR<int, 3>>& stitchNodes){
+void offset_smocking(VECTOR<T, dim> offset_vec, MESH_NODE<T, dim>& X, std::vector<VECTOR<int, 3>>& stitchNodes, int fine_res){
     // std::cout << "Offset input planar mesh with smocking size:" << stitchNodes.size() << std::endl;
     for(int i = 0; i < stitchNodes.size(); i++){
         int node_0_idx = stitchNodes[i][0];
@@ -800,11 +834,11 @@ void offset_smocking(VECTOR<T, dim> offset_vec, MESH_NODE<T, dim>& X, std::vecto
 
         VECTOR<T, dim>& X1_0 = std::get<0>(X.Get_Unchecked(node_0_idx));
         VECTOR<T, dim>& X1_1 = std::get<0>(X.Get_Unchecked(node_0_idx + 1));
-        VECTOR<T, dim>& X1_2 = std::get<0>(X.Get_Unchecked(node_0_idx + 130)); // hardcode fine mesh size
+        VECTOR<T, dim>& X1_2 = std::get<0>(X.Get_Unchecked(node_0_idx + fine_res)); // hardcode fine mesh size
         
         VECTOR<T, dim>& X2_0 = std::get<0>(X.Get_Unchecked(node_1_idx));
         VECTOR<T, dim>& X2_1 = std::get<0>(X.Get_Unchecked(node_1_idx + 1));
-        VECTOR<T, dim>& X2_2 = std::get<0>(X.Get_Unchecked(node_1_idx + 130));
+        VECTOR<T, dim>& X2_2 = std::get<0>(X.Get_Unchecked(node_1_idx + fine_res));
 
         VECTOR<T, dim> N1,N2; // Offset along normal for non-planar mesh 
         N1 = cross(X1_1 - X1_0, X1_2 - X1_0);
@@ -1504,7 +1538,7 @@ T Initialize_Discrete_Shell_Smock(
     MESH_ELEM_ATTR<T, dim - 1>& elemAttr_smock,
     FIXED_COROTATED<T, dim - 1>& elasticityAttr,
     FIXED_COROTATED<T, dim - 1>& elasticityAttr_smock,
-    VECTOR<T, 3>& kappa, T smock_cons, MESH_ELEM<dim - 1>& Smock_pattern,
+    VECTOR<T, 3>& kappa, T smock_cons, MESH_ELEM<dim - 1>& Smock_pattern, int coarse_res,
      bool use_S2 = false, bool use_dist = false)
 {
     if constexpr (dim == 2) {
@@ -1584,12 +1618,12 @@ T Initialize_Discrete_Shell_Smock(
         {
             // dont need unmapped node positions, can use fine X directly 
             MESH_ELEM<dim - 1> Elem_smock_graph;
-            graph_construct(Elem_smock_graph,13);
+            graph_construct(Elem_smock_graph,coarse_res);
             std::cout << "Size of the graph elems: " << Elem_smock_graph.size << std::endl;
             MESH_ELEM<dim - 1> filteredElem_smock(Elem_smock_graph.size);
 
             // map the graph to fine mesh
-            map_smock_pattern<dim>(Elem_smock_graph);
+            map_smock_pattern_general<dim>(Elem_smock_graph, coarse_res);
 
             Elem_smock_graph.Each([&](int id, auto data){
                 auto &[elemGraphVInd] = data;

@@ -156,7 +156,7 @@ class FEMDiscreteShellBase(SimulationBase):
 
         # smocking pattern data
         # self.add_corner_pin_ = False # only for planar smocking
-        self.coarse_mesh_res = 21
+        self.coarse_mesh_res = 13
         self.fine_rate = 5
         self.fine_mesh_res = self.coarse_mesh_res * self.fine_rate + 1 
         self.uniform_stitching_ratio = 1.0
@@ -270,13 +270,13 @@ class FEMDiscreteShellBase(SimulationBase):
         elif smock:
             print("Init with smock mode!")
             if self.use_s2 or self.use_dist:
-                FEM.DiscreteShell.Add_Smocking_Constraint(filepath_smock, filepath_smock_pattern, self.X_smocking, self.Elem_smock, self.Elem_smock_unmapped, self.smock_size, self.Smock_pattern, \
+                FEM.DiscreteShell.Add_Smocking_Constraint(filepath_smock, filepath_smock_pattern, self.X_smocking, self.Elem_smock, self.coarse_mesh_res, self.Elem_smock_unmapped, self.smock_size, self.Smock_pattern, \
                                                           self.uniform_stitching_ratio_smock, self.stitchInfo, self.stitchRatio, self.stitchInfo_0, self.stitchRatio_0)
             else:    
                 FEM.DiscreteShell.Add_Smock_Constraint(filepath_smock, filepath_smock_pattern, self.Elem_smock, self.smock_size , self.if_contact)
             self.dHat2 = FEM.DiscreteShell.Initialize_Shell_Hinge_EIPC_Smock(p_density, E, nu, thickness, self.dt, self.dHat2, self.X, self.X_smocking, self.Elem, self.Elem_smock, self.Elem_smock_unmapped, self.segs, \
             self.edge2tri, self.edgeStencil, self.edgeInfo, self.nodeAttr, self.massMatrix, self.gravity, self.bodyForce, \
-            self.elemAttr, self.elemAttr_smock, self.elasticity, self.elasticity_smock, self.kappa, self.smock_cons, self.Smock_pattern, self.use_s2, self.use_dist)
+            self.elemAttr, self.elemAttr_smock, self.elasticity, self.elasticity_smock, self.kappa, self.smock_cons, self.Smock_pattern, self.coarse_mesh_res, self.use_s2, self.use_dist)
             # if self.use_s2:
             #     # print("The smocking stitching size: ", self.stitchInfo, "\n")
             #     FEM.DiscreteShell.vis_stitching(self.X, self.Elem_smock, self.stitchInfo)
@@ -346,7 +346,7 @@ class FEMDiscreteShellBase(SimulationBase):
         self.Elem = newElem
 
     def Offset_smocking(self, offset_vector):
-        FEM.DiscreteShell.offset_smocking(offset_vector, self.X, self.stitchInfo)
+        FEM.DiscreteShell.offset_smocking(offset_vector, self.X, self.stitchInfo, self.fine_mesh_res)
     
     def load_velocity(self, folderPath, lastFrame, h):
         MeshIO.Load_Velocity(folderPath, lastFrame, h, self.nodeAttr)
