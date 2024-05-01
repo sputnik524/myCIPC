@@ -71,16 +71,29 @@ void close_cyn(MESH_ELEM<dim - 1>& Elem, int mesh_size, bool xcurve = true){
     MESH_ELEM<dim - 1> closeElem;
     // closeElem.resize(2 * (mesh_size - 1));
     for(int i = 0; i < mesh_size-1; i++){
-        
-        VECTOR<int, 3> tri0,tri1;
+        int off = mesh_size * mesh_size;
+        VECTOR<int, 3> tri0,tri1,tri2,tri3;
         if(xcurve){
             tri0[0] = i * mesh_size;
-            tri0[1] = (i+1) * mesh_size - 1;
-            tri0[2] = (i+2) * mesh_size - 1;
+            tri0[2] = (i+1) * mesh_size - 1 + off;
+            tri0[1] = (i+2) * mesh_size - 1 + off;
 
             tri1[0] = i * mesh_size;
             tri1[1] = (i+1) * mesh_size;
-            tri1[2] = (i+1) * mesh_size - 1;
+            tri1[2] = (i+2) * mesh_size - 1 + off;
+
+            tri2[0] = i * mesh_size + off;
+            tri2[2] = (i+1) * mesh_size - 1;
+            tri2[1] = (i+2) * mesh_size - 1;
+
+            tri3[0] = i * mesh_size + off;
+            tri3[1] = (i+1) * mesh_size + off;
+            tri3[2] = (i+2) * mesh_size - 1;
+
+            closeElem.Append(tri0);
+            closeElem.Append(tri1);
+            closeElem.Append(tri2);
+            closeElem.Append(tri3);
         }
 
         else{
@@ -91,10 +104,12 @@ void close_cyn(MESH_ELEM<dim - 1>& Elem, int mesh_size, bool xcurve = true){
             tri1[0] = i;
             tri1[1] = mesh_size * (mesh_size - 1) + i;
             tri1[2] = mesh_size * (mesh_size - 1) + i + 1;
+            
+            closeElem.Append(tri0);
+            closeElem.Append(tri1);
         }
 
-        closeElem.Append(tri0);
-        closeElem.Append(tri1);
+        
 
     }
     Append_Attribute(closeElem, Elem);
