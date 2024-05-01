@@ -30,14 +30,16 @@ if __name__ == "__main__":
     sim.PNTol = 2e-3
 
     # determine the smock pattern type
-    smock_sizes = [48,48,64,72,48,36,54]
-    fine_mesh_res_ = [130,130,130,130,130,130,130]
-    smock_names = ['box','braid','twist', 'arrow','leaf','braid_2','twist_2']
-    smock_pattern_type = 1 # 0 for box, 1 for braid, 2 for twist, 3 for arrow
+    smock_sizes = [48,48,64,72,48,36,54,432,192]
+    fine_mesh_res_ = [130,130,130,130,130,130,130,370,250]
+    coarse_mesh_res_ = [13,13,13,13,13,13,13,37,25]
+    smock_names = ['box','braid','twist', 'arrow','leaf','braid_2','twist_2', 'box_big', 'braid_big']
+    smock_pattern_type = 7 # 0 for box, 1 for braid, 2 for twist, 3 for arrow
     sim.smock_size = smock_sizes[smock_pattern_type]
     sim.fine_mesh_res = fine_mesh_res_[smock_pattern_type]
+    sim.coarse_mesh_res = coarse_mesh_res_[smock_pattern_type]
     smock_name = smock_names[smock_pattern_type]
-    solve_static = False
+    solve_static = True
 
     # sim.add_shell_with_scale_3D("input/"+smock_name +"/S3.obj", Vector3d(0, 0.3, 0.4), Vector3d(0.02, 0.02, 0.02),\
     #     Vector3d(0, 0, 0), Vector3d(1, 0, 0), -90)
@@ -64,8 +66,10 @@ if __name__ == "__main__":
     sim.use_dist = True
 
     if(solve_static):
+        sim.dt = 0.02
         sim.k_stitch = 8e6
-        sim.frame_num = 0
+        sim.frame_num = 1
+        sim.smock_cons = 0.0
         sim.staticSolve = True
         sim.PNTol = 1e-4
         sim.withCollision = False
