@@ -68,8 +68,8 @@ if __name__ == "__main__":
     if(solve_static):
         sim.dt = 0.02
         sim.k_stitch = 8e6
-        sim.frame_num = 0
-        sim.smock_cons = 0.0
+        sim.frame_num = 1
+        sim.smock_cons = 1.0
         sim.staticSolve = True
         sim.PNTol = 1e-4
         sim.withCollision = False
@@ -80,7 +80,7 @@ if __name__ == "__main__":
     sim.bendingStiffMult = bendEMult / membEMult
     sim.kappa_s = Vector2d(0, 0)
 
-    offset_vec =  Vector3d(0, 0, -0.00)
+    offset_vec =  Vector3d(0, 0, -0.005)
     sim.Offset_smocking(offset_vec) 
     
     sim.initialize_OIPC(1e-3, 0)

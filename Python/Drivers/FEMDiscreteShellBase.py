@@ -178,6 +178,9 @@ class FEMDiscreteShellBase(SimulationBase):
     def close_cynlinder(self, xcurve):
         return FEM.DiscreteShell.close_cyn(self.Elem, self.fine_mesh_res, xcurve)
     
+    def close_dress(self):
+        return FEM.DiscreteShell.close_dress(self.Elem, self.fine_mesh_res, 94)
+    
     def add_corner_pin(self):
         return FEM.DiscreteShell.Add_corner_pin(self.pinInfo, self.fine_mesh_res)
     

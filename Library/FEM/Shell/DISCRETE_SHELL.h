@@ -115,6 +115,60 @@ void close_cyn(MESH_ELEM<dim - 1>& Elem, int mesh_size, bool xcurve = true){
     Append_Attribute(closeElem, Elem);
 }
 
+template <class T, int dim = 3>
+void close_dress(MESH_ELEM<dim - 1>& Elem, int mesh_size, int mesh_size2){
+    MESH_ELEM<dim - 1> closeElem;
+    for(int i = 0; i < mesh_size-1; i++){
+        int off = mesh_size * mesh_size;
+        int off_2 = mesh_size * (2 * mesh_size + mesh_size2);
+        int off_3 = mesh_size * (2 * mesh_size + 2 * mesh_size2);
+
+        VECTOR<int, 3> tri0,tri1,tri2,tri3,tri4,tri5,tri6,tri7;
+
+        tri0[0] = i;
+        tri0[1] = off_2 - mesh_size + i + 1;
+        tri0[2] = i+1;
+
+        tri1[0] = i;
+        tri1[1] = off_2 - mesh_size + i;
+        tri1[2] = off_2 - mesh_size + i + 1;
+
+        tri2[0] = i + off;
+        tri2[2] = i + off + 1;
+        tri2[1] = off + (mesh_size + 2 * mesh_size2 - 1) * mesh_size + i + 1;
+
+        tri3[0] = i + off;
+        tri3[1] = off + (mesh_size + 2 * mesh_size2 - 1) * mesh_size + i;
+        tri3[2] = off + (mesh_size + 2 * mesh_size2 - 1) * mesh_size + i + 1;
+
+        tri4[0] = i + off - mesh_size;
+        tri4[2] = off_3 + i;
+        tri4[1] = i  + 1 + off - mesh_size;
+ 
+        tri5[0] = i + off + 1 - mesh_size;
+        tri5[2] = off_3 + i;
+        tri5[1] = off_3 + i + 1;
+
+        tri6[0] = i + 2*off - mesh_size;
+        tri6[1] = i + 2*off - mesh_size + 1;
+        tri6[2] = off_3 + mesh_size * mesh_size2 + i;
+
+        tri7[0] = i + 2*off - mesh_size + 1;
+        tri7[2] = off_3 + mesh_size * mesh_size2 + i;
+        tri7[1] = off_3 + mesh_size * mesh_size2 + i + 1;
+        
+        closeElem.Append(tri0);
+        closeElem.Append(tri1);
+        closeElem.Append(tri2);
+        closeElem.Append(tri3);
+        closeElem.Append(tri4);
+        closeElem.Append(tri5);
+        closeElem.Append(tri6);
+        closeElem.Append(tri7);
+    }
+    Append_Attribute(closeElem, Elem);
+}
+
 
 template <class T, int dim = 3>
 void non_manifold(MESH_NODE<T, dim>& X, MESH_ELEM<dim - 1>& Elem, MESH_ELEM<dim - 1>& Elem_smock)
@@ -2534,6 +2588,7 @@ void Export_Discrete_Shell(py::module& m) {
     shell_m.def("vis_Stitching_witbody", &vis_stitching_withbody<double>);
     shell_m.def("vis_stitching", &vis_stitching<double>);
     shell_m.def("close_cyn", &close_cyn<double>);
+    shell_m.def("close_dress", &close_dress<double>);
     shell_m.def("Progressive_stitching", &progressive_stitching);
     shell_m.def("update_stitchingInfo", &update_stitchingInfo<double>);
     shell_m.def("Add_Shell", &Add_Discrete_Shell_3D<double>);
