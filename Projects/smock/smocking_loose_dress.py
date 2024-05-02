@@ -39,7 +39,7 @@ if __name__ == "__main__":
     sim.fine_mesh_res = fine_mesh_res_[smock_pattern_type]
     sim.coarse_mesh_res = coarse_mesh_res_[smock_pattern_type]
     smock_name = smock_names[smock_pattern_type]
-    solve_static = True
+    solve_static = False
 
     sim.add_shell_with_scale_3D("input/"+smock_name +"/dress_loose.obj", Vector3d(0.3, 0.3, -0.15), Vector3d(0.02, 0.02, 0.02),\
         Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0)
@@ -50,22 +50,22 @@ if __name__ == "__main__":
 
     sim.muComp = StdVectorXd([0, 0, sim.mu,  0, 0, sim.mu,  sim.mu, sim.mu, 0.1])
 
-    sim.dt = 0.005
-    sim.k_stitch = 800
-    sim.frame_dt = 0.005
-    sim.frame_num = 5
+    sim.dt = 0.001
+    sim.k_stitch = 1000
+    sim.frame_dt = 0.001
+    sim.frame_num = 8
     sim.withCollision = True
     sim.smock = True
-    sim.smock_cons = 5.0
+    sim.smock_cons = 3.0
     sim.uniform_stitching_ratio_smock = 1.0
     sim.if_contact = False
-    sim.gravity = Vector3d(0, 0, 0) 
+    sim.gravity = Vector3d(-9.8, 0, 0) 
     sim.staticSolve = solve_static
     sim.use_s2 = True
     sim.use_dist = True
 
     if(solve_static):
-        sim.dt = 0.02
+        sim.dt = 0.01
         sim.k_stitch = 8e6
         sim.frame_num = 1
         sim.smock_cons = 1.0
