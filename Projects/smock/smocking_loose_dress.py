@@ -50,13 +50,13 @@ if __name__ == "__main__":
 
     sim.muComp = StdVectorXd([0, 0, sim.mu,  0, 0, sim.mu,  sim.mu, sim.mu, 0.1])
 
-    sim.dt = 0.001
-    sim.k_stitch = 1000
-    sim.frame_dt = 0.001
+    sim.dt = 0.002
+    sim.k_stitch = 5000
+    sim.frame_dt = 0.002
     sim.frame_num = 8
     sim.withCollision = True
     sim.smock = True
-    sim.smock_cons = 3.0
+    sim.smock_cons = 5.0
     sim.uniform_stitching_ratio_smock = 1.0
     sim.if_contact = False
     sim.gravity = Vector3d(-9.8, 0, 0) 
@@ -79,7 +79,7 @@ if __name__ == "__main__":
     sim.bendingStiffMult = bendEMult / membEMult
     sim.kappa_s = Vector2d(0, 0)
 
-    offset_vec =  Vector3d(0, 0, -0.01)
+    offset_vec =  Vector3d(0, 0, -0.005)
     sim.Offset_smocking(offset_vec) 
     
     sim.initialize_OIPC(1e-3, 0)
