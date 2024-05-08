@@ -414,8 +414,8 @@ class FEMDiscreteShellBase(SimulationBase):
 
         if self.progressive:
             self.update_stitching()
-            offset_vec =  Vector3d(0, 0, 0.01)
-            FEM.DiscreteShell.offset_smocking_prog(offset_vec, self.X, self.stitchInfo)
+            offset_vec =  Vector3d(0, 0, -0.01)
+            FEM.DiscreteShell.offset_smocking_prog(offset_vec, self.X, self.stitchInfo, self.fine_mesh_res)
             # breakpoint()
             self.write(100)
 

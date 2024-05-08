@@ -39,7 +39,7 @@ if __name__ == "__main__":
     sim.fine_mesh_res = fine_mesh_res_[smock_pattern_type]
     sim.coarse_mesh_res = coarse_mesh_res_[smock_pattern_type]
     smock_name = smock_names[smock_pattern_type]
-    solve_static = False
+    solve_static = True
 
     sim.add_shell_with_scale_3D("input/"+smock_name +"/dress_loose.obj", Vector3d(0.3, 0.3, -0.15), Vector3d(0.02, 0.02, 0.02),\
         Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0)
@@ -60,27 +60,33 @@ if __name__ == "__main__":
     sim.uniform_stitching_ratio_smock = 1.0
     sim.if_contact = False
     sim.gravity = Vector3d(-9.8, 0, 0) 
+    # sim.gravity = Vector3d(0, 0, 0) 
     sim.staticSolve = solve_static
     sim.use_s2 = True
     sim.use_dist = True
+    sim.progressive = True
 
     if(solve_static):
         sim.dt = 0.01
-        sim.k_stitch = 8e6
-        sim.frame_num = 1
+        sim.frame_dt = 0.01
+        sim.k_stitch = 1e7
+        sim.frame_num = 50
         sim.smock_cons = 1.0
         sim.staticSolve = True
-        sim.PNTol = 1e-4
+        sim.PNTol = 4e-4
         sim.withCollision = False
     
+    if(sim.progressive):
+        sim.Progressive_stitching()
+
     # Rescale S2!
     sim.initialize(sim.cloth_density_iso[clothI], sim.cloth_Ebase_iso[clothI] * membEMult,
-        sim.cloth_nubase_iso[clothI], sim.cloth_thickness_iso[clothI], 0, smock = sim.smock, filepath_smock = "input/"+smock_name +"/S3_rescaled.obj", filepath_smock_pattern = "input/"+smock_name +"/S1.obj")
+        sim.cloth_nubase_iso[clothI], sim.cloth_thickness_iso[clothI], 0, smock = sim.smock, filepath_smock = "input/"+smock_name +"/S3_rescaled.obj", filepath_smock_pattern = "input/"+smock_name +"/S1_reorder.obj")
     sim.bendingStiffMult = bendEMult / membEMult
     sim.kappa_s = Vector2d(0, 0)
 
-    offset_vec =  Vector3d(0, 0, -0.005)
-    sim.Offset_smocking(offset_vec) 
+    # offset_vec =  Vector3d(0, 0, -0.01)
+    # sim.Offset_smocking(offset_vec) 
     
     sim.initialize_OIPC(1e-3, 0)
 

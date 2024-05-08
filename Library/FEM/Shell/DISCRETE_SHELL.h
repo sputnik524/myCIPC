@@ -920,7 +920,7 @@ void offset_smocking(VECTOR<T, dim> offset_vec, MESH_NODE<T, dim>& X, std::vecto
 }
 
 template <class T, int dim = 3>
-void offset_smocking_prog(VECTOR<T, dim> offset_vec, MESH_NODE<T, dim>& X, std::vector<VECTOR<int, 3>>& stitchNodes){
+void offset_smocking_prog(VECTOR<T, dim> offset_vec, MESH_NODE<T, dim>& X, std::vector<VECTOR<int, 3>>& stitchNodes, int fine_res){
     // assume unit incremental
     for(int i = stitchNodes.size() - 2; i < stitchNodes.size(); i++){
         int node_0_idx = stitchNodes[i][0];
@@ -928,19 +928,19 @@ void offset_smocking_prog(VECTOR<T, dim> offset_vec, MESH_NODE<T, dim>& X, std::
 
         VECTOR<T, dim>& X1_0 = std::get<0>(X.Get_Unchecked(node_0_idx));
         VECTOR<T, dim>& X1_1 = std::get<0>(X.Get_Unchecked(node_0_idx + 1));
-        VECTOR<T, dim>& X1_2 = std::get<0>(X.Get_Unchecked(node_0_idx + 130)); // hardcode fine mesh size
+        VECTOR<T, dim>& X1_2 = std::get<0>(X.Get_Unchecked(node_0_idx + fine_res)); // hardcode fine mesh size
         
         VECTOR<T, dim>& X2_0 = std::get<0>(X.Get_Unchecked(node_1_idx));
         VECTOR<T, dim>& X2_1 = std::get<0>(X.Get_Unchecked(node_1_idx + 1));
-        VECTOR<T, dim>& X2_2 = std::get<0>(X.Get_Unchecked(node_1_idx + 130));
+        VECTOR<T, dim>& X2_2 = std::get<0>(X.Get_Unchecked(node_1_idx + fine_res));
 
         VECTOR<T, dim> N1,N2; // Offset along normal for non-planar mesh 
         N1 = cross(X1_1 - X1_0, X1_2 - X1_0);
         N2 = cross(X2_1 - X2_0, X2_2 - X2_0);
 
         // only offset fixed direction
-        X1_0 += offset_vec;
-        X2_0 += offset_vec;
+        X1_0 += offset_vec[2] * N1.Normalized();
+        X2_0 += offset_vec[2] * N2.Normalized();
     }
 }
 
