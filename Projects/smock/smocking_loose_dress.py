@@ -59,7 +59,7 @@ if __name__ == "__main__":
     sim.smock_cons = 5.0
     sim.uniform_stitching_ratio_smock = 1.0
     sim.if_contact = False
-    sim.gravity = Vector3d(-9.8, 0, 0) 
+    sim.gravity = Vector3d(-0.98, 0, 0) 
     # sim.gravity = Vector3d(0, 0, 0) 
     sim.staticSolve = solve_static
     sim.use_s2 = True
@@ -73,7 +73,7 @@ if __name__ == "__main__":
         sim.frame_num = 50
         sim.smock_cons = 1.0
         sim.staticSolve = True
-        sim.PNTol = 4e-4
+        sim.PNTol = 1e-4
         sim.withCollision = False
     
     if(sim.progressive):
