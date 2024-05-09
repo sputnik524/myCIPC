@@ -40,7 +40,25 @@ void Compute_Smock_Membrane_Energy(
 
                 if constexpr (useNH) {
                     const T lnJ = std::log(A.determinant() * IB.determinant()) / 2;
-                    E += h * h * vol * (mu / 2 * ((IB * A).trace() - 2 - 2 * lnJ) + lambda / 2 * lnJ * lnJ);
+                    T e = h * h * vol * (mu / 2 * ((IB * A).trace() - 2 - 2 * lnJ) + lambda / 2 * lnJ * lnJ);
+                    if (!std::isnan(e)){
+                        E += e;
+                        // std::cout << "lnJ: " << lnJ << std::endl;
+                        // std::cout << "A det: " << A.determinant() << std::endl;
+                        // std::cout << "IB det: " << IB.determinant() << std::endl;
+                    }
+                        
+                    else{
+                        std::cout << "Nan detected with elem id: " << id << std::endl;
+                        std::cout << "A det: " << A.determinant() << std::endl;
+                        std::cout << "x1: " << x1[0] << " " << x1[1] << " " << x1[2] << std::endl;
+                        std::cout << "x2: " << x2[0] << " " << x2[1] << " " << x2[2] << std::endl;
+                        std::cout << "x3: " << x3[0] << " " << x3[1] << " " << x3[2] << std::endl;
+                        std::cout << "A00: " << A(0, 0) << std::endl;
+                        std::cout << "A10, A01: " << A(1, 0) << std::endl;
+                        std::cout << "A11: " << A(1, 1) << std::endl;
+                        std::cout << "IB det: " << IB.determinant() << std::endl;
+                    }
                 }
                 else {
                     MATRIX<T, dim - 1> M = IB * A; M(0, 0) -= 1; M(1, 1) -= 1;
@@ -67,7 +85,21 @@ void Compute_Smock_Membrane_Energy(
 
                 if constexpr (useNH) {
                     const T lnJ = std::log(A.determinant() * IB.determinant()) / 2;
-                    E += h * h * vol * (mu / 2 * ((IB * A).trace() - 2 - 2 * lnJ) + lambda / 2 * lnJ * lnJ);
+                    T e = h * h * vol * (mu / 2 * ((IB * A).trace() - 2 - 2 * lnJ) + lambda / 2 * lnJ * lnJ);
+                    if (!std::isnan(e))
+                        E += e;
+                    // else{
+                    //     std::cout << "Nan detected with smock elem id: " << id << std::endl;
+                    //     std::cout << "A det: " << A.determinant() << std::endl;
+                    //     std::cout << "x1: " << x1[0] << " " << x1[1] << " " << x1[2] << std::endl;
+                    //     std::cout << "x2: " << x2[0] << " " << x2[1] << " " << x2[2] << std::endl;
+                    //     std::cout << "x3: " << x3[0] << " " << x3[1] << " " << x3[2] << std::endl;
+                    //     std::cout << "A00: " << A(0, 0) << std::endl;
+                    //     std::cout << "A10, A01: " << A(1, 0) << std::endl;
+                    //     std::cout << "A11: " << A(1, 1) << std::endl;
+                    //     std::cout << "IB det: " << IB.determinant() << std::endl;
+                    // }
+                        
                 }
                 else {
                     MATRIX<T, dim - 1> M = IB * A; M(0, 0) -= 1; M(1, 1) -= 1;

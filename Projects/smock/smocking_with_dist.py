@@ -66,7 +66,7 @@ if __name__ == "__main__":
     if(solve_static):
         sim.dt = 0.01
         sim.smock_cons = 1.0
-        sim.k_stitch = 8e6
+        sim.k_stitch = 1e7
         sim.frame_num = 1
         sim.staticSolve = True
         sim.PNTol = 1e-4

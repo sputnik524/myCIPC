@@ -139,6 +139,11 @@ MATRIX<T, dim - 1> compute_ref(const VECTOR<int, 3>& tri_elem, MESH_NODE<T, dim>
         IB(0,0) = length01 * length01;
         IB(1,1) = length20 * length20;
         IB(0,1) = IB(1,0) = 0.5 * (length01 * length01 - length12 * length12 + length20 * length20);// given a,b,c, want ab*cos(C),law of cosine
+    
+        if(IB.determinant() < 0.0){ // PREVENT LAW OF TRI
+            IB(0,0) = IB(1,1) = 1.0;
+            IB(1,0) = IB(0,1) = 1.0;
+        }
     }
 
     return IB;
