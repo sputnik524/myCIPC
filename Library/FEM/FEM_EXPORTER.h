@@ -6,6 +6,7 @@
 #include <FEM/TimeStepper/TIME_STEPPER.h>
 #include <FEM/SHELL.h>
 #include <FEM/Shell/DISCRETE_SHELL.h>
+#include <FEM/Shell/POPULATE.h>
 #include <FEM/FRACTURE.h>
 #include <FEM/IPC.h>
 #include <pybind11/pybind11.h>
@@ -58,6 +59,7 @@ void Export_FEM(py::module& m) {
 #ifdef ENABLE_FEM_SHELL
     Export_Shell(m);
     Export_Discrete_Shell(m);
+    Export_Populate(m);
 #endif
 
 #ifdef ENABLE_FEM_FRACTURE

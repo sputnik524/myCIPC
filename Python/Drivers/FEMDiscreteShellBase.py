@@ -164,6 +164,7 @@ class FEMDiscreteShellBase(SimulationBase):
         self.if_contact = True
         self.use_s2 = False
         self.use_dist = False
+        self.use_populate = False
 
         # progressive smocking
         self.progressive = False
@@ -214,6 +215,8 @@ class FEMDiscreteShellBase(SimulationBase):
         # breakpoint()
         FEM.DiscreteShell.update_stitchingInfo(self.current_frame, self.stitching_seq, self.stitchInfo, self.stitchRatio, self.stitchInfo_0, self.stitchRatio_0)
         
+    def populate(self, start_idx, end_idx, stage_start, stage_size, scale):
+        FEM.smock.Populate_pattern(self.X, self.stitchInfo, self.stitchRatio, start_idx, end_idx, stage_start, stage_size, scale, self.smock_size)
 
     def add_mannequin(self, filePath, translate, scale, rotCenter, rotAxis, rotDeg):
         meshCounter = FEM.DiscreteShell.Add_Shell(filePath, translate, scale, rotCenter, rotAxis, rotDeg, self.X, self.Elem, self.compNodeRange)
@@ -275,6 +278,9 @@ class FEMDiscreteShellBase(SimulationBase):
             if self.use_s2 or self.use_dist:
                 FEM.DiscreteShell.Add_Smocking_Constraint(filepath_smock, filepath_smock_pattern, self.X_smocking, self.Elem_smock, self.coarse_mesh_res, self.Elem_smock_unmapped, self.smock_size, self.Smock_pattern, \
                                                           self.uniform_stitching_ratio_smock, self.stitchInfo, self.stitchRatio, self.stitchInfo_0, self.stitchRatio_0)
+            # elif self.use_populate: 
+                # FEM.DiscreteShell.Populate_smocking(self.X_smocking, self.Elem_smock, self.stitchInfo, self.stitchRatio)
+            
             else:    
                 FEM.DiscreteShell.Add_Smock_Constraint(filepath_smock, filepath_smock_pattern, self.Elem_smock, self.smock_size , self.if_contact)
             self.dHat2 = FEM.DiscreteShell.Initialize_Shell_Hinge_EIPC_Smock(p_density, E, nu, thickness, self.dt, self.dHat2, self.X, self.X_smocking, self.Elem, self.Elem_smock, self.Elem_smock_unmapped, self.segs, \
@@ -350,6 +356,9 @@ class FEMDiscreteShellBase(SimulationBase):
 
     def Offset_smocking(self, offset_vector):
         FEM.DiscreteShell.offset_smocking(offset_vector, self.X, self.stitchInfo, self.fine_mesh_res)
+
+    def Offset_stitching(self, offset):
+        FEM.smock.Offset_stitching(offset, self.X, self.stitchInfo, 220)
     
     def load_velocity(self, folderPath, lastFrame, h):
         MeshIO.Load_Velocity(folderPath, lastFrame, h, self.nodeAttr)

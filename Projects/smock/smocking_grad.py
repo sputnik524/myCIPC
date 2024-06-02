@@ -43,7 +43,7 @@ if __name__ == "__main__":
 
     # sim.add_shell_with_scale_3D("input/"+smock_name +"/S3.obj", Vector3d(0, 0.3, 0.4), Vector3d(0.02, 0.02, 0.02),\
     #     Vector3d(0, 0, 0), Vector3d(1, 0, 0), -90)
-    sim.add_shell_with_scale_3D("input/"+smock_name +"/S3_grad.obj", Vector3d(0.3, 0.3, -0.15), Vector3d(1.0, 1.0, 1.0),\
+    sim.add_shell_with_scale_3D("input/"+smock_name +"/S3_grad_1_min.obj", Vector3d(0.3, 0.3, -0.15), Vector3d(1.0, 1.0, 1.0),\
         Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0)
 
     sim.muComp = StdVectorXd([0, 0, sim.mu,  0, 0, sim.mu,  sim.mu, sim.mu, 0.1])
@@ -76,7 +76,7 @@ if __name__ == "__main__":
     sim.add_corner_pin() # only for planar mesh
     # Rescale S2!
     sim.initialize(sim.cloth_density_iso[clothI], sim.cloth_Ebase_iso[clothI] * membEMult,
-        sim.cloth_nubase_iso[clothI], sim.cloth_thickness_iso[clothI], 0, smock = sim.smock, filepath_smock = "input/"+smock_name +"/S3_grad.obj", filepath_smock_pattern = "input/"+smock_name +"/S1.obj")
+        sim.cloth_nubase_iso[clothI], sim.cloth_thickness_iso[clothI], 0, smock = sim.smock, filepath_smock = "input/"+smock_name +"/S3_grad_1_min.obj", filepath_smock_pattern = "input/"+smock_name +"/S1.obj")
     sim.bendingStiffMult = bendEMult / membEMult
     sim.kappa_s = Vector2d(0, 0)
     

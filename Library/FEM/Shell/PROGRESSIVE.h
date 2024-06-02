@@ -28,8 +28,8 @@ void update_stitchingInfo(int cur_frame, const std::vector<int>& stitchSeq, std:
     // stitchNodes.resize(cur_frame*2);
     std::cout << "After clear size: " << stitchNodes.size() << std::endl;
 
-    stitchNodes.insert(stitchNodes.end(), stitchNodes_0.begin(), stitchNodes_0.begin() + 2*cur_frame);
-    stitchRatio.insert(stitchRatio.end(), stitchRatio_0.begin(), stitchRatio_0.begin() + 2*cur_frame);
+    stitchNodes.insert(stitchNodes.end(), stitchNodes_0.begin(), stitchNodes_0.begin() + 24*cur_frame);
+    stitchRatio.insert(stitchRatio.end(), stitchRatio_0.begin(), stitchRatio_0.begin() + 24*cur_frame);
 
 
     // for(int i = 0 ; i < cur_frame; i++){

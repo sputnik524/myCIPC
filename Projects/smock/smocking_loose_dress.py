@@ -64,13 +64,13 @@ if __name__ == "__main__":
     sim.staticSolve = solve_static
     sim.use_s2 = True
     sim.use_dist = True
-    sim.progressive = True
+    # sim.progressive = True
 
     if(solve_static):
         sim.dt = 0.01
         sim.frame_dt = 0.01
         sim.k_stitch = 1e7
-        sim.frame_num = 50
+        sim.frame_num = 1
         sim.smock_cons = 1.0
         sim.staticSolve = True
         sim.PNTol = 1e-4
@@ -81,7 +81,7 @@ if __name__ == "__main__":
 
     # Rescale S2!
     sim.initialize(sim.cloth_density_iso[clothI], sim.cloth_Ebase_iso[clothI] * membEMult,
-        sim.cloth_nubase_iso[clothI], sim.cloth_thickness_iso[clothI], 0, smock = sim.smock, filepath_smock = "input/"+smock_name +"/S3_rescaled.obj", filepath_smock_pattern = "input/"+smock_name +"/S1_reorder.obj")
+        sim.cloth_nubase_iso[clothI], sim.cloth_thickness_iso[clothI], 0, smock = sim.smock, filepath_smock = "input/"+smock_name +"/S3_rescaled.obj", filepath_smock_pattern = "input/"+smock_name +"/S1.obj")
     sim.bendingStiffMult = bendEMult / membEMult
     sim.kappa_s = Vector2d(0, 0)
 

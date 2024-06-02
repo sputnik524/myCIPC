@@ -550,6 +550,12 @@ void Add_Smocking_Constraint(
 }
 
 template <class T, int dim = 3>
+void populate_smocking(MESH_NODE<T, dim>& X_0, std::vector<VECTOR<int, 3>>& stitchNodes, std::vector<T>& stitchRatio)
+{
+    
+}
+
+template <class T, int dim = 3>
 void Add_Garment_3D(
     const std::string& filePath,
     const VECTOR<T, dim>& trans,
@@ -922,7 +928,7 @@ void offset_smocking(VECTOR<T, dim> offset_vec, MESH_NODE<T, dim>& X, std::vecto
 template <class T, int dim = 3>
 void offset_smocking_prog(VECTOR<T, dim> offset_vec, MESH_NODE<T, dim>& X, std::vector<VECTOR<int, 3>>& stitchNodes, int fine_res){
     // assume unit incremental
-    for(int i = stitchNodes.size() - 2; i < stitchNodes.size(); i++){
+    for(int i = stitchNodes.size() - 24; i < stitchNodes.size(); i++){
         int node_0_idx = stitchNodes[i][0];
         int node_1_idx = stitchNodes[i][1];
 
@@ -2596,6 +2602,7 @@ void Export_Discrete_Shell(py::module& m) {
     shell_m.def("reload_Shell_withSmock", &override_Shell_3D_withSmock<double>);
     shell_m.def("Add_Smock_Constraint", &Add_Smock_Constraint<double>);
     shell_m.def("Add_Smocking_Constraint", &Add_Smocking_Constraint<double>);
+    shell_m.def("Populate_smocking", &populate_smocking<double>);
     shell_m.def("Make_Rod", &Make_Rod<double, 3>);
     shell_m.def("Make_Rod_Net", &Make_Rod_Net<double, 3>);
     shell_m.def("Add_Discrete_Particles", &Add_Discrete_Particles<double, 3>);
