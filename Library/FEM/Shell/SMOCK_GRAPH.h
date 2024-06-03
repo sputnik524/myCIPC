@@ -98,9 +98,9 @@ double compute_edge_length(int v1, int v2, int pleat_1, int pleat_2, MESH_NODE<T
 }
 
 template <class T, int dim = 3>
-MATRIX<T, dim - 1> compute_ref(const VECTOR<int, 3>& tri_elem, MESH_NODE<T, dim>& X, MESH_ELEM<dim - 1>& Smock_pattern, double scale = 0.02){
+MATRIX<T, dim - 1> compute_ref(const VECTOR<int, 3>& tri_elem, MESH_NODE<T, dim>& X, MESH_ELEM<dim - 1>& Smock_pattern){
     
-    std::cout << "Current graph elem: " << tri_elem[0] << " " << tri_elem[1] << " " << tri_elem[2] << std::endl;
+    // std::cout << "Current graph elem: " << tri_elem[0] << " " << tri_elem[1] << " " << tri_elem[2] << std::endl;
     
     MATRIX<T, dim - 1> IB;
     VECTOR<int, 3> tri_elem_ref;
@@ -125,7 +125,7 @@ MATRIX<T, dim - 1> compute_ref(const VECTOR<int, 3>& tri_elem, MESH_NODE<T, dim>
     length12 = compute_edge_length(tri_elem[1], tri_elem[2], tri_elem_ref[1], tri_elem_ref[2],X,Smock_pattern);
     length20 = compute_edge_length(tri_elem[2], tri_elem[0], tri_elem_ref[2], tri_elem_ref[0],X,Smock_pattern);
 
-    std::cout << "Current edge length: " << length01 << " " << length12 << " " << length20 << std::endl;
+    // std::cout << "Current edge length: " << length01 << " " << length12 << " " << length20 << std::endl;
 
     if(length01 < INT_MIN || length12 < INT_MIN || length20 < INT_MIN)
     {

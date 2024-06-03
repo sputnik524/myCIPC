@@ -6,7 +6,8 @@ namespace py = pybind11;
 namespace JGSL {
 
 template<class T, int dim = 3>
-void populate_pattern(MESH_NODE<T, dim>& X_0, std::vector<VECTOR<int, 3>>& smock_stitch, std::vector<T>& stitchRatio,
+void populate_pattern(MESH_NODE<T, dim>& X_0, std::vector<VECTOR<int, 3>>& smock_stitch, 
+    std::vector<T>& stitchRatio, MESH_ELEM<dim - 1>& Smock_pattern,
     int start_idx, int end_idx, 
     int stage_start, int stage_size, 
     T scale, int& smock_stitch_size)
@@ -38,6 +39,7 @@ void populate_pattern(MESH_NODE<T, dim>& X_0, std::vector<VECTOR<int, 3>>& smock
 
             int found_node1, found_node2, found_node3, found_node4;
             VECTOR<int, 3> stitch1, stitch2;
+            VECTOR<int, 3> smock1, smock2;
 
             // find target within the stage
             for(int k = 0; k < stage_size; k++){
@@ -69,7 +71,7 @@ void populate_pattern(MESH_NODE<T, dim>& X_0, std::vector<VECTOR<int, 3>>& smock
                 }
             }
 
-            // std::cout << "Distance1: " << dist1 << "with found node:" << found_node1 << std::endl;
+            // also need to add smock pattern
 
             stitch1[0] = found_node1;
             stitch1[1] = found_node2;
@@ -79,11 +81,22 @@ void populate_pattern(MESH_NODE<T, dim>& X_0, std::vector<VECTOR<int, 3>>& smock
             stitch2[1] = found_node4;
             stitch2[2] = found_node4;
 
+            smock1(0) = found_node1;
+            smock1(1) = found_node2;
+            smock1(2) = -1;
+
+            smock2(0) = found_node3;
+            smock2(1) = found_node4;
+            smock2(2) = -1;
+
             smock_stitch.push_back(stitch1);
             smock_stitch.push_back(stitch2);
 
             stitchRatio.push_back(1.0);
             stitchRatio.push_back(1.0);
+
+            Smock_pattern.Append(smock1);
+            Smock_pattern.Append(smock2);
 
             smock_stitch_size += 2;
         }
@@ -93,7 +106,7 @@ void populate_pattern(MESH_NODE<T, dim>& X_0, std::vector<VECTOR<int, 3>>& smock
 
 template <class T, int dim = 3>
 void offset_stitching(T offset, MESH_NODE<T, dim>& X, std::vector<VECTOR<int, 3>>& stitchNodes, const int& smock_stitch_size){
-    std::cout << "The size of all stitch is: " << stitchNodes.size() << std::endl;
+    // std::cout << "The size of all stitch is: " << stitchNodes.size() << std::endl;
     int start = stitchNodes.size() - smock_stitch_size;
     for(int i = start; i < stitchNodes.size(); i++){
         int node_0_idx = stitchNodes[i][0];
@@ -103,9 +116,80 @@ void offset_stitching(T offset, MESH_NODE<T, dim>& X, std::vector<VECTOR<int, 3>
         VECTOR<T, dim>& X1_0 = std::get<0>(X.Get_Unchecked(node_0_idx));
         VECTOR<T, dim>& X2_0 = std::get<0>(X.Get_Unchecked(node_1_idx));
 
-        X1_0[2] += offset;
-        X2_0[2] += offset;
+        if(X1_0[2] > 0.0){
+            X1_0[2] += offset;
+            X2_0[2] += offset;
+        }
+
+        else{
+            X1_0[2] -= offset;
+            X2_0[2] -= offset;
+        }
+        
     }
+}
+
+template <class T, int dim = 3>
+void populate_coarse_graph(MESH_NODE<T, dim>& X_0, MESH_ELEM<dim - 1>& graph_Elem,
+    int start_idx, int end_idx, 
+    int stage_start, int stage_size, 
+    T scale)
+{
+    const VECTOR<T, dim>& root = std::get<0>(X_0.Get_Unchecked(start_idx)); // pop root
+    const VECTOR<T, dim>& terminal = std::get<0>(X_0.Get_Unchecked(end_idx)); // pop terminal
+    int x_times = std::abs((terminal - root)[0] / scale) + 1;
+    int y_times = std::abs((terminal - root)[1] / scale) + 1;
+
+    std::vector<int> graph_nodes(x_times * y_times);
+
+    for(int i  = 0; i < x_times; i++){
+        for(int j = 0; j < y_times; j++){
+
+            VECTOR<T, dim> target = root + VECTOR<T, dim>(i*scale, -j*scale, 0.0);
+            double dist = 100.0;
+            int found_node;
+            
+            for(int k = 0; k < stage_size; k++){
+                int cur_idx = stage_start + k;
+                const VECTOR<T, dim>& cur_node = std::get<0>(X_0.Get_Unchecked(cur_idx)); 
+                double cur_dist = (target - cur_node).length();
+
+                if(cur_dist < dist){
+                    dist = cur_dist;
+                    found_node = cur_idx;
+                }  
+            }
+            graph_nodes[j*x_times + i] = found_node;
+        }
+    }
+
+    for(int i = 0; i < x_times-1; i++){
+        for(int j = 0; j < y_times-1; j++){
+            VECTOR<int, 3> tri0,tri1,tri2,tri3;
+            tri0(0) = graph_nodes[j*x_times + i];
+            tri0(1) = graph_nodes[j*x_times + i + 1];
+            tri0(2) = graph_nodes[j*x_times + i + x_times];
+            
+            tri1(0) = graph_nodes[j*x_times + i + 1];
+            tri1(1) = graph_nodes[j*x_times + i + x_times];
+            tri1(2) = graph_nodes[j*x_times + i + x_times + 1];
+
+            tri2(0) = graph_nodes[j*x_times + i];
+            tri2(1) = graph_nodes[j*x_times + i + 1];
+            tri2(2) = graph_nodes[j*x_times + i + x_times + 1];
+
+            tri3(0) = graph_nodes[j*x_times + i] ;
+            tri3(1) = graph_nodes[j*x_times + i + x_times] ;
+            tri3(2) = graph_nodes[j*x_times + i + x_times + 1] ;
+
+            graph_Elem.Append(tri0);
+            graph_Elem.Append(tri1);
+            graph_Elem.Append(tri2);
+            graph_Elem.Append(tri3);
+        }
+    }
+
+    std::cout << "The size of the graph elements are: " << graph_Elem.size << std::endl;
 }
 
 
@@ -114,6 +198,7 @@ void Export_Populate(py::module& m) {
 
     smock_m.def("Populate_pattern", &populate_pattern<double>);
     smock_m.def("Offset_stitching", &offset_stitching<double>);
+    smock_m.def("Populate_coarse_graph", &populate_coarse_graph<double>);
 }
 
 

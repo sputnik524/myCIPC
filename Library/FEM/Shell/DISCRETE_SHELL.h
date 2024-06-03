@@ -1304,7 +1304,7 @@ void Compute_Discrete_Shell_Inv_Basis_Smock(
     std::vector<VECTOR<T, 3>>& edgeInfo,
     MESH_ELEM_ATTR<T, dim - 1>& elemAttr,
     MESH_ELEM_ATTR<T, dim - 1>& elemAttr_smock, MESH_ELEM<dim - 1>& Smock_pattern,
-     bool use_S2, bool use_dist = false)
+     bool use_S2, bool use_dist = false, bool use_populate = false)
 {
     if constexpr (dim == 2) {
         //TODO
@@ -1378,7 +1378,11 @@ void Compute_Discrete_Shell_Inv_Basis_Smock(
 
             else
             {   
-                IB = compute_ref(elemVInd, X_smock, Smock_pattern);
+                if (use_populate)
+                    IB = compute_ref(elemVInd, X, Smock_pattern);
+                else
+                    IB = compute_ref(elemVInd, X_smock, Smock_pattern);
+
                 std::cout << "IB det: " << abs(IB.determinant()) << std::endl;
             }
             // const VECTOR<T, dim> E01 = X2 - X1;
@@ -1614,7 +1618,7 @@ T Initialize_Discrete_Shell_Smock(
     FIXED_COROTATED<T, dim - 1>& elasticityAttr,
     FIXED_COROTATED<T, dim - 1>& elasticityAttr_smock,
     VECTOR<T, 3>& kappa, T smock_cons, MESH_ELEM<dim - 1>& Smock_pattern, int coarse_res,
-     bool use_S2 = false, bool use_dist = false)
+     bool use_S2 = false, bool use_dist = false, bool use_populate = false)
 {
     if constexpr (dim == 2) {
         //TODO
@@ -1689,7 +1693,7 @@ T Initialize_Discrete_Shell_Smock(
             filteredElem_smock_unmapped.deep_copy_to(Elem_smock_unmapped);
         }
 
-        else
+        else if (!use_populate)
         {
             // dont need unmapped node positions, can use fine X directly 
             MESH_ELEM<dim - 1> Elem_smock_graph;
@@ -1704,6 +1708,24 @@ T Initialize_Discrete_Shell_Smock(
                 auto &[elemGraphVInd] = data;
                 MATRIX<T, dim - 1> IB;
                 IB = compute_ref(elemGraphVInd, X_smock, Smock_pattern);
+                if(abs(IB.determinant()) > 1e-15) 
+                    filteredElem_smock.Append(elemGraphVInd);                
+            });
+            filteredElem_smock.deep_copy_to(Elem_smock);
+            
+        }
+
+        else{
+            // populate_coarse_graph(Elem_smock_graph); populate outside and store in unmapped smock elems
+            MESH_ELEM<dim - 1> filteredElem_smock(Elem_smock_unmapped.size);
+
+            Elem_smock_unmapped.Each([&](int id, auto data){
+                auto &[elemGraphVInd] = data;
+                MATRIX<T, dim - 1> IB;
+                if (use_populate)
+                    IB = compute_ref(elemGraphVInd, X, Smock_pattern);
+                else
+                    IB = compute_ref(elemGraphVInd, X_smock, Smock_pattern);
                 if(abs(IB.determinant()) > 1e-15) 
                     filteredElem_smock.Append(elemGraphVInd);                
             });
@@ -1737,7 +1759,7 @@ T Initialize_Discrete_Shell_Smock(
         else if (!use_dist)
             Compute_Discrete_Shell_Inv_Basis_Smock<T, dim, KL>(X, X_smock, Elem, Elem_smock_unmapped, edge2tri, edge, edgeStencil, edgeInfo, elemAttr, elemAttr_smock, Smock_pattern, use_S2);
         else
-            Compute_Discrete_Shell_Inv_Basis_Smock<T, dim, KL>(X, X_smock, Elem, Elem_smock, edge2tri, edge, edgeStencil, edgeInfo, elemAttr, elemAttr_smock, Smock_pattern, use_S2, use_dist);
+            Compute_Discrete_Shell_Inv_Basis_Smock<T, dim, KL>(X, X_smock, Elem, Elem_smock, edge2tri, edge, edgeStencil, edgeInfo, elemAttr, elemAttr_smock, Smock_pattern, use_S2, use_dist, use_populate);
 
         // mass matrix and body force
         std::vector<Eigen::Triplet<T>> triplets;
