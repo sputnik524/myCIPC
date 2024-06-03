@@ -65,6 +65,42 @@ if __name__ == "__main__":
 
     sim.populate(start, end, stage_start, stage_size, scale)
 
+    # left sleeve front 
+    start = 95561
+    end = 79153
+    stage_start = 78174
+    stage_size = 106821 - 78175 + 1
+    x_axis = Vector3d(-56.063 + 59.3825, 5.46448 - 2.67906, 0.0) 
+    y_axis = Vector3d(-98.9106 + 97.8388, 2.59655 - 1.31922, 0.0)
+
+    sim.populate(start, end, stage_start, stage_size, scale, x_axis, y_axis)
+
+    # left sleeve back 
+    start = 243107
+    end = 252690
+    stage_start = 243072
+    stage_size = 271279 - 243073 + 1
+    # x_axis = Vector3d(-56.063 + 59.3825, 5.46448 - 2.67906, 0.0) 
+    # y_axis = Vector3d(-98.9106 + 97.8388, 2.59655 - 1.31922, 0.0)
+    sim.populate(start, end, stage_start, stage_size, scale, x_axis, y_axis)
+
+    # right sleeve front 
+    start = 106860
+    end = 115120
+    stage_start = 106821
+    stage_size = 135415 - 106822 + 1
+    x_axis = Vector3d(101.669 - 103.97, 18.4399 - 16.5086, 0.0) 
+    y_axis = Vector3d(102.786 - 101.071 , 5.74841 - 3.70469, 0.0)
+
+    sim.populate(start, end, stage_start, stage_size, scale, x_axis, y_axis)
+
+    # right sleeve back 
+    start = 223656
+    end = 240784
+    stage_start = 214793
+    stage_size = 243072 - 214794 + 1
+
+    sim.populate(start, end, stage_start, stage_size, scale, x_axis, y_axis)
 
     if(solve_static):
         sim.dt = 0.01
@@ -82,7 +118,7 @@ if __name__ == "__main__":
     sim.kappa_s = Vector2d(0, 0)
     
     offset_vec = -0.008
-    sim.Offset_stitching(offset_vec, 72 * 2)
+    sim.Offset_stitching(offset_vec, 72 * 2 + 126 * 4)
 
     sim.initialize_OIPC(1e-3, 0)
 

@@ -44,7 +44,7 @@ double compute_edge_length(int v1, int v2, int pleat_1, int pleat_2, MESH_NODE<T
     }
     
     else if(pleat_1 >= 0 && pleat_2 >= 0){
-        std::cout << "Degenerated edge:" << pleat_1 << " " << pleat_2 << std::endl;  
+        // std::cout << "Degenerated edge:" << pleat_1 << " " << pleat_2 << std::endl;  
         if (pleat_1 == pleat_2)
             return 0.0;
         else{

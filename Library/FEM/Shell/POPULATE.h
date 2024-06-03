@@ -10,27 +10,29 @@ void populate_pattern(MESH_NODE<T, dim>& X_0, std::vector<VECTOR<int, 3>>& smock
     std::vector<T>& stitchRatio, MESH_ELEM<dim - 1>& Smock_pattern,
     int start_idx, int end_idx, 
     int stage_start, int stage_size, 
-    T scale, int& smock_stitch_size)
-{
+    T scale, VECTOR<T, 3>& x_axis, VECTOR<T, 3>& y_axis)
+{   
+    x_axis = x_axis.Normalized();
+    y_axis = y_axis.Normalized();
     // determine the boundary
     const VECTOR<T, dim>& root = std::get<0>(X_0.Get_Unchecked(start_idx)); // pop root
     std::cout << "The root pos is: " << root[0] << " " << root[1] << std::endl;
     const VECTOR<T, dim>& terminal = std::get<0>(X_0.Get_Unchecked(end_idx)); // pop terminal
     std::cout << "The terminal pos is: " << terminal[0] << " " << terminal[1] << std::endl;
-    int x_times = std::abs((terminal - root)[0] / (3.0 * scale));
-    int y_times = std::abs((terminal - root)[1] / (2.0 * scale));
+    int x_times = std::abs((terminal - root).dot(x_axis) / (3.0 * scale));
+    int y_times = std::abs((terminal - root).dot(y_axis) / (2.0 * scale));
     std::cout << "The repeat info is: " << x_times << " " << y_times << std::endl;
     
-    smock_stitch_size = 0;
+    int smock_stitch_size = 0;
     // braid pattern
     for(int i  = 0; i < x_times; i++){
         for(int j = 0; j < y_times; j++){
             // four smocking nodes for an unit braid pattern
-            VECTOR<T, dim> target1 = root + VECTOR<T, dim>(scale + i * 3 * scale, - j * 2 * scale, 0.0);
-            VECTOR<T, dim> target2 = root + VECTOR<T, dim>(i * 3 * scale, -(scale + j * 2 * scale), 0.0);
+            VECTOR<T, dim> target1 = root + (scale + i * 3 * scale) * x_axis - (j * 2 * scale) * y_axis; // VECTOR<T, dim>(scale + i * 3 * scale, - j * 2 * scale, 0.0);
+            VECTOR<T, dim> target2 = root + (i * 3 * scale) * x_axis - (scale + j * 2 * scale) * y_axis; // VECTOR<T, dim>(i * 3 * scale, -(scale + j * 2 * scale), 0.0);
 
-            VECTOR<T, dim> target3 = root + VECTOR<T, dim>(scale + i * 3 * scale, -(scale + j * 2 * scale), 0.0);
-            VECTOR<T, dim> target4 = root + VECTOR<T, dim>(scale * 2 + i * 3 * scale, -(scale * 2 + j * 2 * scale), 0.0);
+            VECTOR<T, dim> target3 = root + (scale + i * 3 * scale) * x_axis - (scale + j * 2 * scale) * y_axis; // VECTOR<T, dim>(scale + i * 3 * scale, -(scale + j * 2 * scale), 0.0);
+            VECTOR<T, dim> target4 = root + (scale * 2 + i * 3 * scale) * x_axis - (scale * 2 + j * 2 * scale) * y_axis; //VECTOR<T, dim>(scale * 2 + i * 3 * scale, -(scale * 2 + j * 2 * scale), 0.0);
 
             double dist1 = 100.0;
             double dist2 = 100.0;
@@ -133,19 +135,21 @@ template <class T, int dim = 3>
 void populate_coarse_graph(MESH_NODE<T, dim>& X_0, MESH_ELEM<dim - 1>& graph_Elem,
     int start_idx, int end_idx, 
     int stage_start, int stage_size, 
-    T scale)
+    T scale, VECTOR<T, 3>& x_axis, VECTOR<T, 3>& y_axis)
 {
+    x_axis = x_axis.Normalized();
+    y_axis = y_axis.Normalized();
     const VECTOR<T, dim>& root = std::get<0>(X_0.Get_Unchecked(start_idx)); // pop root
     const VECTOR<T, dim>& terminal = std::get<0>(X_0.Get_Unchecked(end_idx)); // pop terminal
-    int x_times = std::abs((terminal - root)[0] / scale) + 1;
-    int y_times = std::abs((terminal - root)[1] / scale) + 1;
+    int x_times = std::abs((terminal - root).dot(x_axis) / scale) + 1;
+    int y_times = std::abs((terminal - root).dot(y_axis) / scale) + 1;
 
     std::vector<int> graph_nodes(x_times * y_times);
 
     for(int i  = 0; i < x_times; i++){
         for(int j = 0; j < y_times; j++){
 
-            VECTOR<T, dim> target = root + VECTOR<T, dim>(i*scale, -j*scale, 0.0);
+            VECTOR<T, dim> target = root + (i * scale) * x_axis - (j * scale) * y_axis; //VECTOR<T, dim>(i*scale, -j*scale, 0.0);
             double dist = 100.0;
             int found_node;
             

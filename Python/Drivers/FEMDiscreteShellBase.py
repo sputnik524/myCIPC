@@ -215,9 +215,9 @@ class FEMDiscreteShellBase(SimulationBase):
         # breakpoint()
         FEM.DiscreteShell.update_stitchingInfo(self.current_frame, self.stitching_seq, self.stitchInfo, self.stitchRatio, self.stitchInfo_0, self.stitchRatio_0)
         
-    def populate(self, start_idx, end_idx, stage_start, stage_size, scale):
-        FEM.smock.Populate_pattern(self.X, self.stitchInfo, self.stitchRatio, self.Smock_pattern, start_idx, end_idx, stage_start, stage_size, scale, self.smock_size)
-        FEM.smock.Populate_coarse_graph(self.X, self.Elem_smock_unmapped, start_idx, end_idx, stage_start, stage_size, scale)
+    def populate(self, start_idx, end_idx, stage_start, stage_size, scale, x_axis = Vector3d(1.0, 0.0, 0.0), y_axis = Vector3d(0.0, 1.0, 0.0)):
+        FEM.smock.Populate_pattern(self.X, self.stitchInfo, self.stitchRatio, self.Smock_pattern, start_idx, end_idx, stage_start, stage_size, scale, x_axis, y_axis)
+        FEM.smock.Populate_coarse_graph(self.X, self.Elem_smock_unmapped, start_idx, end_idx, stage_start, stage_size, scale, x_axis, y_axis)
 
     def add_mannequin(self, filePath, translate, scale, rotCenter, rotAxis, rotDeg):
         meshCounter = FEM.DiscreteShell.Add_Shell(filePath, translate, scale, rotCenter, rotAxis, rotDeg, self.X, self.Elem, self.compNodeRange)
