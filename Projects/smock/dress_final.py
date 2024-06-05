@@ -30,12 +30,12 @@ if __name__ == "__main__":
     sim.PNTol = 3e-3
 
     # add stage garment
-    sim.add_shell_with_scale_3D("input/dress/high_cloth_wraping.obj", Vector3d(0.0, 0.0, -0.0), Vector3d(0.01, 0.01, 0.01),\
+    sim.add_garment_3D("input/dress/high_cloth_wraping.obj", Vector3d(0.0, 0.0, -0.0), Vector3d(0.01, 0.01, 0.01),\
         Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0)
 
     # add mannequin
     meshCounter = sim.add_shell_with_scale_3D("input/f_average_A40.obj", Vector3d(0.0, -0.8, 0.0), \
-        Vector3d(1.0, 1.0, 1.0),Vector3d(0, 0, 0), Vector3d(0, 0, 1), 0) 
+        Vector3d(0.9, 0.95, 0.85),Vector3d(0, 0, 0), Vector3d(0, 0, 1), 0) 
     
     sim.set_DBC_with_range(Vector3d(-0.1, -0.1, -0.1), Vector3d(1.1, 1.1, 1.1), 
             Vector3d(0, 0.0, 0), Vector3d(0, 0, 0), Vector3d(0, 1, 0), 0, meshCounter)
@@ -126,8 +126,10 @@ if __name__ == "__main__":
     sim.bendingStiffMult = bendEMult / membEMult
     sim.kappa_s = Vector2d(0, 0)
     
-    offset_vec = -0.01
-    sim.Offset_stitching(offset_vec, 72 * 2 + 126 * 4)
+    # offset_vec = -0.01
+    # sim.Offset_stitching(offset_vec, 72 * 2 + 126 * 4)
+
+    sim.load_frame("input/dress/shell_start.obj") 
 
     sim.initialize_OIPC(1e-3, 0)
 

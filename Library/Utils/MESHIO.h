@@ -299,8 +299,19 @@ VECTOR<int, 4> Read_TriMesh_Tex_Obj(const std::string& filePath,
             stitchRatio.resize(stitchRatio.size() + 1);
             ss >> stitchRatio.back();
         }
-    }
+        else if (line[0] == 'l') 
+        {
+            std::string bypass;
+            ss >> bypass;
+            stitchNodes.resize(stitchNodes.size() + 1);
+            ss >> stitchNodes.back()[0] >> stitchNodes.back()[1];
+            stitchNodes.back()[2] = stitchNodes.back()[1];
+            stitchRatio.resize(stitchRatio.size() + 1);
+            stitchRatio.back() = 1.0;
+        }
 
+    }
+    std::cout << "First stitching info: " << stitchNodes[0] << " " << stitchNodes[1] << " " << stitchNodes[2] << std::endl;
     is.close();
 
     counter(2) = X.size;
