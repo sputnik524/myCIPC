@@ -80,6 +80,84 @@ VECTOR<int, 4> Read_TriMesh_Obj(const std::string& filePath,
 }
 
 template <class T, int dim>
+VECTOR<int, 4> Read_TriMesh_Obj_stitch(const std::string& filePath, 
+    MESH_NODE<T, dim>& X, MESH_ELEM<2>& triangles,
+    std::vector<VECTOR<int, 3>>& stitchNodes, std::vector<T>& stitchRatio)
+{
+    std::ifstream is(filePath);
+    if (!is.is_open()) {
+        puts((filePath + " not found!").c_str());
+        return VECTOR<int, 4>(-1, -1, -1, -1);
+    }
+
+    std::string line;
+    VECTOR<T, dim> position;
+    VECTOR<int, 3> tri;
+    VECTOR<int, 4> counter(X.size, triangles.size, 0, 0);
+    while (std::getline(is, line)) {
+        std::stringstream ss(line);
+        if (line[0] == 'v' && line[1] == ' ') {
+            ss.ignore();
+            for (size_t i = 0; i < dim; i++)
+                ss >> position(i);
+            X.Append(position);
+        }
+        else if (line[0] == 'f') {
+            int cnt = 0;
+            int length = line.size();
+            for (int i = 0; i < 3; ++i) {
+                while (cnt < length && (line[cnt] < '0' || line[cnt] > '9'))
+                    cnt++;
+                int index = 0;
+                while (cnt < length && '0' <= line[cnt] && line[cnt] <= '9') {
+                    index = index * 10 + line[cnt] - '0';
+                    cnt++;
+                }
+                tri(i) = index - 1;
+                while (cnt < length && line[cnt] != ' ')
+                    cnt++;
+            }
+
+            for (int i = 0; i < 3; ++i) {
+                tri[i] += counter[0];
+            }
+            triangles.Append(tri);
+
+            while (cnt < length && (line[cnt] < '0' || line[cnt] > '9'))
+                cnt++;
+            if (cnt < length) {
+                // quad
+                int index = 0;
+                while (cnt < length && '0' <= line[cnt] && line[cnt] <= '9') {
+                    index = index * 10 + line[cnt] - '0';
+                    cnt++;
+                }
+                triangles.Append(VECTOR<int, 3>(tri[0], tri[2], index - 1 + counter[0]));
+            }
+        }
+        else if (line[0] == 'l') 
+        {
+            std::string bypass;
+            ss >> bypass;
+            stitchNodes.resize(stitchNodes.size() + 1);
+            ss >> stitchNodes.back()[0] >> stitchNodes.back()[1];
+            stitchNodes.back()[0]--;
+            stitchNodes.back()[1]--;
+            stitchNodes.back()[2] = stitchNodes.back()[1];
+            stitchRatio.resize(stitchRatio.size() + 1);
+            stitchRatio.back() = 1.0;
+        }
+    }
+
+    is.close();
+
+    counter(2) = X.size;
+    counter(3) = triangles.size;
+
+    return counter;
+}
+
+template <class T, int dim>
 void Read_TriMesh_Obj_smock(const std::string& filePath, MESH_NODE<T, dim>& X, MESH_ELEM<2>& triangles, MESH_ELEM<2>& smock_pattern)
 {
     std::ifstream is(filePath);
@@ -311,7 +389,7 @@ VECTOR<int, 4> Read_TriMesh_Tex_Obj(const std::string& filePath,
         }
 
     }
-    std::cout << "First stitching info: " << stitchNodes[0] << " " << stitchNodes[1] << " " << stitchNodes[2] << std::endl;
+    // std::cout << "First stitching info: " << stitchNodes.front()[0] << " " << stitchNodes.front()[1] << " " << stitchNodes.front()[2] << std::endl;
     is.close();
 
     counter(2) = X.size;
@@ -1465,6 +1543,7 @@ void Extrude_Cylinder(const std::string& filePath)
 void Export_MeshIO(py::module& m) {
     m.def("Read_TriMesh_Obj", &Read_TriMesh_Obj<double, 2>, "read triangle mesh from obj file");
     m.def("Read_TriMesh_Obj", &Read_TriMesh_Obj<double, 3>, "read triangle mesh from obj file");
+    m.def("Read_TriMesh_Obj_stitch", &Read_TriMesh_Obj_stitch<double, 3>, "read triangle mesh from obj file");
     m.def("Read_TriMesh_Tex_Obj", &Read_TriMesh_Tex_Obj<double, 3>, "read triangle mesh with texture to obj file");
     m.def("Write_TriMesh_Obj", &Write_TriMesh_Obj<double, 2>, "write planar triangle mesh to obj file");
     m.def("Write_TriMesh_Obj", &Write_TriMesh_Obj<double, 3>, "write triangle mesh to obj file");

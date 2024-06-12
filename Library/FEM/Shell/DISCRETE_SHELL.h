@@ -67,6 +67,72 @@ VECTOR<int, 4> Add_Discrete_Shell_3D(
 }
 
 template <class T, int dim = 3>
+VECTOR<int, 4> Add_Discrete_Shell_3D_stitch(
+    const std::string& filePath,
+    const VECTOR<T, dim>& trans,
+    const VECTOR<T, dim>& scale,
+    const VECTOR<T, dim>& rotCenter,
+    const VECTOR<T, dim>& rotAxis,
+    T rotAngDeg,
+    MESH_NODE<T, dim>& X, // mid-surface node coordinates
+    MESH_ELEM<dim - 1>& Elem, // the mid-surface triangles
+    std::vector<int>& compNodeRange,
+    std::vector<VECTOR<int, 3>>& stitchNodes, std::vector<T>& stitchRatio)
+{
+    MESH_NODE<T, dim> newX;
+    MESH_ELEM<dim - 1> newElem;
+    std::vector<VECTOR<int, 3>> stitchNodes_;
+    std::vector<T> stitchRatio_;
+    VECTOR<int, 4> counter = Read_TriMesh_Obj_stitch(filePath, newX, newElem, stitchNodes_, stitchRatio_);
+    int n = 0;
+
+    for(int i = 0; i < stitchNodes_.size(); i+=5){
+        stitchNodes.resize(stitchNodes.size() + 1);
+        stitchNodes[n] = stitchNodes_[i];
+        stitchRatio.resize(stitchRatio.size() + 1);
+        stitchRatio[n] = stitchRatio_[i];
+        n++;
+    }
+    std::cout << "The garment stitching size is: " << n;
+
+    counter[0] += X.size;
+    counter[2] += X.size;
+    counter[1] += Elem.size;
+    counter[3] += Elem.size;
+
+    T rotAngRad = rotAngDeg / 180 * M_PI;
+    newX.Par_Each([&](int id, auto data){
+        auto &[X] = data;
+        if constexpr (dim == 3) {
+            const Eigen::Matrix3d rotMtr = Eigen::AngleAxis<T>(rotAngRad,
+                Eigen::Vector3d(rotAxis[0], rotAxis[1], rotAxis[2])).toRotationMatrix();
+            Eigen::Vector3d x((X - rotCenter).data);
+            x = x.cwiseProduct(Eigen::Vector3d(scale.data));
+            const Eigen::Vector3d rotx = rotMtr * x;
+            for (int i = 0; i < dim; ++i) {
+                X[i] = rotx[i] + rotCenter[i] + trans[i];
+            }
+        }
+        else {
+            //TODO
+        }
+    });
+    newElem.Par_Each([&](int id, auto data){
+        auto &[elemVInd] = data;
+        for (int i = 0; i < dim; ++i) {
+            elemVInd[i] += X.size;
+        }
+    });
+
+    Append_Attribute(newX, X);
+    Append_Attribute(newElem, Elem);
+
+    compNodeRange.emplace_back(X.size);
+
+    return counter;
+}
+
+template <class T, int dim = 3>
 void close_cyn(MESH_ELEM<dim - 1>& Elem, int mesh_size, bool xcurve = true){
     MESH_ELEM<dim - 1> closeElem;
     // closeElem.resize(2 * (mesh_size - 1));
@@ -2620,6 +2686,7 @@ void Export_Discrete_Shell(py::module& m) {
     shell_m.def("Progressive_stitching", &progressive_stitching);
     shell_m.def("update_stitchingInfo", &update_stitchingInfo<double>);
     shell_m.def("Add_Shell", &Add_Discrete_Shell_3D<double>);
+    shell_m.def("Add_Shell_with_stitch", &Add_Discrete_Shell_3D_stitch<double>);
     shell_m.def("Add_Shell_withSmock", &Add_Discrete_Shell_3D_withSmock<double>);
     shell_m.def("reload_Shell_withSmock", &override_Shell_3D_withSmock<double>);
     shell_m.def("Add_Smock_Constraint", &Add_Smock_Constraint<double>);

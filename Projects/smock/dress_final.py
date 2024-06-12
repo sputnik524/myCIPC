@@ -27,11 +27,11 @@ if __name__ == "__main__":
         bendEMult = float(sys.argv[5])
 
     sim.mu = 0.0
-    sim.PNTol = 3e-3
+    sim.PNTol = 2e-3
 
     # add stage garment
-    sim.add_garment_3D("input/dress/high_cloth_wraping.obj", Vector3d(0.0, 0.0, -0.0), Vector3d(0.01, 0.01, 0.01),\
-        Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0)
+    sim.add_shell_with_scale_3D("input/dress/high_cloth_wraping_2.obj", Vector3d(0.0, 0.0, -0.0), Vector3d(1.0, 1.0, 1.0),\
+        Vector3d(0, 0, 0), Vector3d(1, 0, 0), 0, True)
 
     # add mannequin
     meshCounter = sim.add_shell_with_scale_3D("input/f_average_A40.obj", Vector3d(0.0, -0.8, 0.0), \
@@ -45,17 +45,18 @@ if __name__ == "__main__":
 
     sim.dt = 0.01
     sim.frame_dt = 0.01
-    sim.frame_num = 0
-    sim.k_stitch = 1e4
+    sim.frame_num = 30
+    sim.k_stitch = 1e5
     sim.use_s2 = True
     sim.use_dist = True
     sim.use_populate = True
-    sim.gravity = Vector3d(0, 0, 0) 
+    sim.gravity = Vector3d(0, -9.8, 0) 
     sim.staticSolve = solve_static
     sim.smock = True
-    sim.smock_cons = 3.0
+    sim.smock_cons = 1.0
     sim.uniform_stitching_ratio_smock = 1.0
     sim.withCollision = True
+    # sim.delayed_g = True
 
     # wb front data
     stage_size = 12911
@@ -129,7 +130,7 @@ if __name__ == "__main__":
     # offset_vec = -0.01
     # sim.Offset_stitching(offset_vec, 72 * 2 + 126 * 4)
 
-    sim.load_frame("input/dress/shell_start.obj") 
+    sim.load_frame("input/dress/shell30.obj") 
 
     sim.initialize_OIPC(1e-3, 0)
 

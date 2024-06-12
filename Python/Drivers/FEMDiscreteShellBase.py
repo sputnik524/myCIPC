@@ -169,13 +169,17 @@ class FEMDiscreteShellBase(SimulationBase):
         # progressive smocking
         self.progressive = False
         self.stitching_seq = StdVectorXi()
+        self.delayed_g = False
 
     def add_shell_3D(self, filePath, translate, rotCenter, rotAxis, rotDeg): # 3D
         return FEM.DiscreteShell.Add_Shell(filePath, translate, Vector3d(1, 1, 1), rotCenter, rotAxis, rotDeg, self.X, self.Elem, self.compNodeRange)
     
-    def add_shell_with_scale_3D(self, filePath, translate, scale, rotCenter, rotAxis, rotDeg):
-        return FEM.DiscreteShell.Add_Shell(filePath, translate, scale, rotCenter, rotAxis, rotDeg, self.X, self.Elem, self.compNodeRange)
-    
+    def add_shell_with_scale_3D(self, filePath, translate, scale, rotCenter, rotAxis, rotDeg, stitch = False):
+        if not stitch:
+            return FEM.DiscreteShell.Add_Shell(filePath, translate, scale, rotCenter, rotAxis, rotDeg, self.X, self.Elem, self.compNodeRange)
+        else:
+            return FEM.DiscreteShell.Add_Shell_with_stitch(filePath, translate, scale, rotCenter, rotAxis, rotDeg, self.X, self.Elem, self.compNodeRange, self.stitchInfo, self.stitchRatio)
+
     def close_cynlinder(self, xcurve):
         return FEM.DiscreteShell.close_cyn(self.Elem, self.fine_mesh_res, xcurve)
     
