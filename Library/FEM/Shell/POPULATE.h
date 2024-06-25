@@ -1,5 +1,5 @@
 #pragma once
-
+#include <FEM/Shell/ORIGAMI.h>
 // for populate a certain smocking pattern on a garment stage
 
 namespace py = pybind11;
@@ -132,10 +132,11 @@ void offset_stitching(T offset, MESH_NODE<T, dim>& X, std::vector<VECTOR<int, 3>
 }
 
 template <class T, int dim = 3>
-void populate_coarse_graph(MESH_NODE<T, dim>& X_0, MESH_ELEM<dim - 1>& graph_Elem,
+void populate_coarse_graph(MESH_NODE<T, dim>& X_0, MESH_NODE<T, dim>& X_load, MESH_ELEM<dim - 1>& graph_Elem,
     int start_idx, int end_idx, 
     int stage_start, int stage_size, 
-    T scale, VECTOR<T, 3>& x_axis, VECTOR<T, 3>& y_axis)
+    T scale, VECTOR<T, 3>& x_axis, VECTOR<T, 3>& y_axis, std::vector<VECTOR<int, 4>>& edgeStencil,
+    std::vector<VECTOR<T, 3>>& edgeInfo)
 {
     x_axis = x_axis.Normalized();
     y_axis = y_axis.Normalized();
@@ -143,6 +144,8 @@ void populate_coarse_graph(MESH_NODE<T, dim>& X_0, MESH_ELEM<dim - 1>& graph_Ele
     const VECTOR<T, dim>& terminal = std::get<0>(X_0.Get_Unchecked(end_idx)); // pop terminal
     int x_times = std::abs((terminal - root).dot(x_axis) / scale) + 1;
     int y_times = std::abs((terminal - root).dot(y_axis) / scale) + 1;
+    int x_units = std::abs((terminal - root).dot(x_axis) / (3.0 * scale));
+    int y_units = std::abs((terminal - root).dot(y_axis) / (2.0 * scale));
 
     std::vector<int> graph_nodes(x_times * y_times);
 
@@ -163,37 +166,37 @@ void populate_coarse_graph(MESH_NODE<T, dim>& X_0, MESH_ELEM<dim - 1>& graph_Ele
                     found_node = cur_idx;
                 }  
             }
-            graph_nodes[j*x_times + i] = found_node;
+            graph_nodes[j*x_times + i] = found_node; // row-major storage
         }
     }
 
-    for(int i = 0; i < x_times-1; i++){
-        for(int j = 0; j < y_times-1; j++){
-            VECTOR<int, 3> tri0,tri1,tri2,tri3;
-            tri0(0) = graph_nodes[j*x_times + i];
-            tri0(1) = graph_nodes[j*x_times + i + 1];
-            tri0(2) = graph_nodes[j*x_times + i + x_times];
+    std::vector<int> underlay_idx;
+
+    for(int j = 0; j < y_times-1; j++){
+        for(int i = 0; i < x_times-1; i++){
+            // TODO: Delete pleat elems!!!
+            VECTOR<int, 3> tri;
             
-            tri1(0) = graph_nodes[j*x_times + i + 1];
-            tri1(1) = graph_nodes[j*x_times + i + x_times];
-            tri1(2) = graph_nodes[j*x_times + i + x_times + 1];
-
-            tri2(0) = graph_nodes[j*x_times + i];
-            tri2(1) = graph_nodes[j*x_times + i + 1];
-            tri2(2) = graph_nodes[j*x_times + i + x_times + 1];
-
-            tri3(0) = graph_nodes[j*x_times + i] ;
-            tri3(1) = graph_nodes[j*x_times + i + x_times] ;
-            tri3(2) = graph_nodes[j*x_times + i + x_times + 1] ;
-
-            graph_Elem.Append(tri0);
-            graph_Elem.Append(tri1);
-            graph_Elem.Append(tri2);
-            graph_Elem.Append(tri3);
+            if(i%3 == 1 && j%2 == 0){
+                tri(0) = graph_nodes[j*x_times + i];
+                tri(1) = graph_nodes[j*x_times + i + 1];
+                tri(2) = graph_nodes[j*x_times + i + x_times];
+                graph_Elem.Append(tri);
+                underlay_idx.push_back(graph_Elem.size - 1);
+            }
+            
+            else if(i%3 == 0 && j%2 == 1){
+                tri(0) = graph_nodes[j*x_times + i];
+                tri(1) = graph_nodes[j*x_times + i + 1];
+                tri(2) = graph_nodes[j*x_times + i + x_times + 1];
+                graph_Elem.Append(tri);
+                underlay_idx.push_back(graph_Elem.size - 1);
+            }
         }
     }
-
     std::cout << "The size of the graph elements are: " << graph_Elem.size << std::endl;
+    add_underlay_edges(X_load, graph_Elem, underlay_idx, edgeStencil, edgeInfo, x_units);
+    
 }
 
 

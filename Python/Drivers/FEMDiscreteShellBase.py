@@ -16,6 +16,7 @@ class FEMDiscreteShellBase(SimulationBase):
         super().__init__(precision, dim)
         self.X0 = Storage.V2dStorage() if self.dim == 2 else Storage.V3dStorage()
         self.X = Storage.V2dStorage() if self.dim == 2 else Storage.V3dStorage()
+        self.X_load = Storage.V2dStorage() if self.dim == 2 else Storage.V3dStorage()
         self.X_rest = Storage.V2dStorage() if self.dim == 2 else Storage.V3dStorage()
         self.X_stage = Storage.V2dStorage() if self.dim == 2 else Storage.V3dStorage()
         self.X_smocking = Storage.V2dStorage() if self.dim == 2 else Storage.V3dStorage() # for s2
@@ -221,7 +222,7 @@ class FEMDiscreteShellBase(SimulationBase):
         
     def populate(self, start_idx, end_idx, stage_start, stage_size, scale, x_axis = Vector3d(1.0, 0.0, 0.0), y_axis = Vector3d(0.0, 1.0, 0.0)):
         FEM.smock.Populate_pattern(self.X, self.stitchInfo, self.stitchRatio, self.Smock_pattern, start_idx, end_idx, stage_start, stage_size, scale, x_axis, y_axis)
-        FEM.smock.Populate_coarse_graph(self.X, self.Elem_smock_unmapped, start_idx, end_idx, stage_start, stage_size, scale, x_axis, y_axis)
+        FEM.smock.Populate_coarse_graph(self.X, self.X_load, self.Elem_smock_unmapped, start_idx, end_idx, stage_start, stage_size, scale, x_axis, y_axis, self.edgeStencil, self.edgeInfo)
 
     def add_mannequin(self, filePath, translate, scale, rotCenter, rotAxis, rotDeg):
         meshCounter = FEM.DiscreteShell.Add_Shell(filePath, translate, scale, rotCenter, rotAxis, rotDeg, self.X, self.Elem, self.compNodeRange)
@@ -343,13 +344,17 @@ class FEMDiscreteShellBase(SimulationBase):
         self.elasticIPC = False
         self.thickness = offset
 
-    def load_frame(self, filePath):
+    def load_frame(self, filePath, X_load = False):
         newX = Storage.V2dStorage() if self.dim == 2 else Storage.V3dStorage()
         newElem = Storage.V2iStorage() if self.dim == 2 else Storage.V3iStorage()
         MeshIO.Read_TriMesh_Obj(filePath, newX, newElem)
-        self.X = newX
+        if X_load:
+            self.X_load = newX
+        else:
+            self.X = newX
+            FEM.Reset_Dirichlet(self.X, self.DBC)
         # self.Elem = newElem
-        FEM.Reset_Dirichlet(self.X, self.DBC)
+        
 
     def load_frame_nm(self, filePath, filePath_smock):
         newX = Storage.V2dStorage() if self.dim == 2 else Storage.V3dStorage()

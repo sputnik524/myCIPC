@@ -43,21 +43,21 @@ if __name__ == "__main__":
     solve_static = False
     sim.muComp = StdVectorXd([0, 0, sim.mu,  0, 0, sim.mu,  sim.mu, sim.mu, 0.1])
 
-    sim.dt = 0.01
-    sim.frame_dt = 0.01
-    sim.frame_num = 30
-    sim.k_stitch = 1e5
+    sim.dt = 0.003
+    sim.frame_dt = 0.003
+    sim.frame_num = 20
+    sim.k_stitch = 1e3
     sim.use_s2 = True
     sim.use_dist = True
     sim.use_populate = True
     sim.gravity = Vector3d(0, -9.8, 0) 
     sim.staticSolve = solve_static
     sim.smock = True
-    sim.smock_cons = 1.0
+    sim.smock_cons = 5.0
     sim.uniform_stitching_ratio_smock = 1.0
     sim.withCollision = True
-    # sim.delayed_g = True
 
+    sim.load_frame("input/dress/shell_start_4.obj", True) 
     # wb front data
     stage_size = 12911
     stage_start = 135415
@@ -120,7 +120,7 @@ if __name__ == "__main__":
         sim.staticSolve = True
         sim.PNTol = 2.5e-4
         sim.withCollision = False
-    
+    # breakpoint()
     # populate before sim init
     sim.initialize(sim.cloth_density_iso[clothI], sim.cloth_Ebase_iso[clothI] * membEMult,
     sim.cloth_nubase_iso[clothI], sim.cloth_thickness_iso[clothI], 0, sim.smock)
@@ -130,7 +130,7 @@ if __name__ == "__main__":
     # offset_vec = -0.01
     # sim.Offset_stitching(offset_vec, 72 * 2 + 126 * 4)
 
-    sim.load_frame("input/dress/shell30.obj") 
+    sim.load_frame("input/dress/shell_start_4.obj") 
 
     sim.initialize_OIPC(1e-3, 0)
 
