@@ -43,17 +43,17 @@ if __name__ == "__main__":
     solve_static = False
     sim.muComp = StdVectorXd([0, 0, sim.mu,  0, 0, sim.mu,  sim.mu, sim.mu, 0.1])
 
-    sim.dt = 0.003
-    sim.frame_dt = 0.003
+    sim.dt = 0.002
+    sim.frame_dt = 0.002
     sim.frame_num = 20
     sim.k_stitch = 1e3
     sim.use_s2 = True
     sim.use_dist = True
     sim.use_populate = True
-    sim.gravity = Vector3d(0, -9.8, 0) 
+    sim.gravity = Vector3d(0, -0.0, 0) 
     sim.staticSolve = solve_static
     sim.smock = True
-    sim.smock_cons = 5.0
+    sim.smock_cons = 1.0
     sim.uniform_stitching_ratio_smock = 1.0
     sim.withCollision = True
 
