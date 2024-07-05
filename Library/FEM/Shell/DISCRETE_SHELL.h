@@ -1345,7 +1345,7 @@ void Compute_Discrete_Shell_Inv_Basis_Smock(
                 else
                     IB = compute_ref(elemVInd, X_smock, Smock_pattern);
 
-                std::cout << "IB det: " << abs(IB.determinant()) << std::endl;
+                // std::cout << "IB det: " << abs(IB.determinant()) << std::endl;
             }
             // const VECTOR<T, dim> E01 = X2 - X1;
             // const VECTOR<T, dim> E02 = X3 - X1;

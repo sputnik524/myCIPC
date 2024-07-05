@@ -18,11 +18,11 @@ if __name__ == "__main__":
     if len(sys.argv) > 3:
         size = sys.argv[3]
     
-    membEMult = 1.0
+    membEMult = 1.5
     if len(sys.argv) > 4:
         membEMult = float(sys.argv[4])
     
-    bendEMult = 100
+    bendEMult = 150
     if len(sys.argv) > 5:
         bendEMult = float(sys.argv[5])
 
@@ -43,17 +43,17 @@ if __name__ == "__main__":
     solve_static = False
     sim.muComp = StdVectorXd([0, 0, sim.mu,  0, 0, sim.mu,  sim.mu, sim.mu, 0.1])
 
-    sim.dt = 0.002
-    sim.frame_dt = 0.002
+    sim.dt = 0.01
+    sim.frame_dt = 0.01
     sim.frame_num = 20
-    sim.k_stitch = 1e3
+    sim.k_stitch = 1e5
     sim.use_s2 = True
     sim.use_dist = True
     sim.use_populate = True
-    sim.gravity = Vector3d(0, -0.0, 0) 
+    sim.gravity = Vector3d(0, -9.8, 0) 
     sim.staticSolve = solve_static
     sim.smock = True
-    sim.smock_cons = 1.0
+    sim.smock_cons = 10.0
     sim.uniform_stitching_ratio_smock = 1.0
     sim.withCollision = True
 
@@ -130,7 +130,7 @@ if __name__ == "__main__":
     # offset_vec = -0.01
     # sim.Offset_stitching(offset_vec, 72 * 2 + 126 * 4)
 
-    sim.load_frame("input/dress/shell_start_4.obj") 
+    sim.load_frame("input/dress/shell2_.obj") 
 
     sim.initialize_OIPC(1e-3, 0)
 

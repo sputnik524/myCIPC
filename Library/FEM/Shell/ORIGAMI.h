@@ -9,7 +9,7 @@ void add_underlay_edges(MESH_NODE<T, dim>& X, MESH_ELEM<dim - 1>& graph_Elem, co
     std::cout << "Underlay size: " << underlay_idx.size() << std::endl;
     for(int i = 0; i < underlay_idx.size() - x_units; i++){
         // int graph_offset = graph_Elem.size - underlay_idx.size();
-        std::cout << "Current underlay idx: " << underlay_idx[i] << std::endl;
+        // std::cout << "Current underlay idx: " << underlay_idx[i] << std::endl;
         const VECTOR<int, 3>& underlay_tri_1 = std::get<0>(graph_Elem.Get_Unchecked(underlay_idx[i]));
         const VECTOR<int, 3>& underlay_tri_2 = std::get<0>(graph_Elem.Get_Unchecked(underlay_idx[i + x_units]));
         
@@ -29,7 +29,7 @@ void add_underlay_edges(MESH_NODE<T, dim>& X, MESH_ELEM<dim - 1>& graph_Elem, co
             edgeStencil.emplace_back(VECTOR<int, 4>(underlay_tri_2[2], underlay_tri_2[0], underlay_tri_2[1], v3_1));
         }
 
-        std::cout << "EdgeStencil size: " << edgeStencil.size() << std::endl;
+        // std::cout << "EdgeStencil size: " << edgeStencil.size() << std::endl;
 
         for(int i = 0; i < 2; i++){
             VECTOR<int, 4> cur_edgeStencil = edgeStencil[edgeStencil.size() - 2 + i];
@@ -42,6 +42,8 @@ void add_underlay_edges(MESH_NODE<T, dim>& X, MESH_ELEM<dim - 1>& graph_Elem, co
 
             edgeInfo.resize(edgeInfo.size() + 1);
             Compute_Dihedral_Angle(X0e, X1e, X2e, X3e, edgeInfo.back()[0]);
+            std::cout << "Cur dihedral angle: " << edgeInfo.back()[0] << std::endl;
+            edgeInfo.back()[0] = 0.0;
             edgeInfo.back()[1] = (X1 - X2).length();
             VECTOR<T, 3> n1 = cross(X1 - X0, X2 - X0);
             VECTOR<T, 3> n2 = cross(X2 - X3, X1 - X3);

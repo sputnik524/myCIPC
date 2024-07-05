@@ -177,7 +177,7 @@ void populate_coarse_graph(MESH_NODE<T, dim>& X_0, MESH_NODE<T, dim>& X_load, ME
             // TODO: Delete pleat elems!!!
             VECTOR<int, 3> tri;
             
-            if(i%3 == 1 && j%2 == 0){
+            if(i%3 == 1 && j%2 == 0 && i/3 < x_units && j/2 < y_units){
                 tri(0) = graph_nodes[j*x_times + i];
                 tri(1) = graph_nodes[j*x_times + i + 1];
                 tri(2) = graph_nodes[j*x_times + i + x_times];
@@ -185,7 +185,7 @@ void populate_coarse_graph(MESH_NODE<T, dim>& X_0, MESH_NODE<T, dim>& X_load, ME
                 underlay_idx.push_back(graph_Elem.size - 1);
             }
             
-            else if(i%3 == 0 && j%2 == 1){
+            else if(i%3 == 0 && j%2 == 1 && i/3 < x_units && j/2 < y_units){
                 tri(0) = graph_nodes[j*x_times + i];
                 tri(1) = graph_nodes[j*x_times + i + 1];
                 tri(2) = graph_nodes[j*x_times + i + x_times + 1];
