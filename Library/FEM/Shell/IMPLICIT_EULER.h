@@ -1358,8 +1358,10 @@ int Advance_One_Step_IE_Discrete_Shell_smock(
         // Check_Fiber_Hessian(Elem, DBC, h, fiberStiffMult, X, nodeAttr, M, elemAttr, elasticityAttr);
         // Check_Rod_Spring_Gradient(X, rod, rodInfo, h, nodeAttr);
         // Check_Rod_Spring_Hessian(X, rod, rodInfo, h, nodeAttr);
-        // Check_Stitch_Gradient(X, stitchInfo, stitchRatio, k_stitch, h, nodeAttr);
-        // Check_Stitch_Hessian(X, stitchInfo, stitchRatio, k_stitch, h, nodeAttr);
+        // Check_Stitch_Gradient(X, stitchInfo, stitchRatio, DBCb, k_stitch, h, nodeAttr);
+        // Check_Stitch_Hessian(X, stitchInfo, stitchRatio, DBCb, k_stitch, h, nodeAttr);
+        // Check_Edge_Bending_Gradient(h, rodHinge, rodHingeInfo, X, nodeAttr);
+        // Check_Edge_Bending_Hessian(h, rodHinge, rodHingeInfo, X, nodeAttr);
 
         // compute gradient
         Compute_IncPotential_Gradient<T, dim, KL, elasticIPC, flow>(Elem, h, edge2tri, edgeStencil, edgeInfo, thickness, bendingStiffMult, fiberStiffMult, fiberLimit,

@@ -138,14 +138,15 @@ void Check_Stitch_Gradient(
     MESH_NODE<T, dim>& X,
     const std::vector<VECTOR<int, 3>>& stitchInfo,
     const std::vector<T>& stitchRatio,
+    const std::vector<bool>& DBCb,
     T k, T h, MESH_NODE_ATTR<T, dim>& nodeAttr)
 {
     T eps = 1.0e-6;
 
     T E0 = 0;
-    Compute_Stitch_Energy(X, stitchInfo, stitchRatio, k, h, E0);
+    Compute_Stitch_Energy(X, stitchInfo, stitchRatio, DBCb, k, h, E0);
     nodeAttr.template Fill<FIELDS<MESH_NODE_ATTR<T, dim>>::g>(VECTOR<T, dim>(0));
-    Compute_Stitch_Gradient(X, stitchInfo, stitchRatio, k, h, nodeAttr);
+    Compute_Stitch_Gradient(X, stitchInfo, stitchRatio, DBCb, k, h, nodeAttr);
 
     std::vector<T> grad_FD(X.size * dim);
     for (int i = 0; i < X.size * dim; ++i) {
@@ -154,7 +155,7 @@ void Check_Stitch_Gradient(
         std::get<0>(Xperturb.Get_Unchecked(i / dim))[i % dim] += eps;
         
         T E = 0;
-        Compute_Stitch_Energy(Xperturb, stitchInfo, stitchRatio, k, h, E);
+        Compute_Stitch_Energy(Xperturb, stitchInfo, stitchRatio, DBCb, k, h, E);
         grad_FD[i] = (E - E0) / eps;
     }
 
@@ -181,6 +182,7 @@ void Check_Stitch_Hessian(
     MESH_NODE<T, dim>& X,
     const std::vector<VECTOR<int, 3>>& stitchInfo,
     const std::vector<T>& stitchRatio,
+    const std::vector<bool>& DBCb,
     T k, T h, MESH_NODE_ATTR<T, dim>& nodeAttr)
 {
     T eps = 1.0e-6;
@@ -188,9 +190,9 @@ void Check_Stitch_Hessian(
     MESH_NODE_ATTR<T, dim> nodeAttr0;
     nodeAttr.deep_copy_to(nodeAttr0);
     nodeAttr0.template Fill<FIELDS<MESH_NODE_ATTR<T, dim>>::g>(VECTOR<T, dim>(0));
-    Compute_Stitch_Gradient(X, stitchInfo, stitchRatio, k, h, nodeAttr0);
+    Compute_Stitch_Gradient(X, stitchInfo, stitchRatio, DBCb, k, h, nodeAttr0);
     std::vector<Eigen::Triplet<T>> HStriplets;
-    Compute_Stitch_Hessian(X, stitchInfo, stitchRatio, k, h, false, HStriplets);
+    Compute_Stitch_Hessian(X, stitchInfo, stitchRatio, DBCb, k, h, false, HStriplets);
     CSR_MATRIX<T> HS;
     HS.Construct_From_Triplet(X.size * dim, X.size * dim, HStriplets);
 
@@ -202,7 +204,7 @@ void Check_Stitch_Hessian(
         std::get<0>(Xperturb.Get_Unchecked(i / dim))[i % dim] += eps;
         
         nodeAttr.template Fill<FIELDS<MESH_NODE_ATTR<T, dim>>::g>(VECTOR<T, dim>(0));
-        Compute_Stitch_Gradient(Xperturb, stitchInfo, stitchRatio, k, h, nodeAttr);
+        Compute_Stitch_Gradient(Xperturb, stitchInfo, stitchRatio, DBCb, k, h, nodeAttr);
         for (int vI = 0; vI < X.size; ++vI) {
             const VECTOR<T, dim>& g = std::get<FIELDS<MESH_NODE_ATTR<T, dim>>::g>(nodeAttr.Get_Unchecked(vI));
             const VECTOR<T, dim>& g0 = std::get<FIELDS<MESH_NODE_ATTR<T, dim>>::g>(nodeAttr0.Get_Unchecked(vI));

@@ -150,7 +150,7 @@ class FEMDiscreteShellBase(SimulationBase):
         self.scaleXMultStep = 1
         self.scaleYMultStep = 1
         self.scaleZMultStep = 1
-        self.zeroVel = False
+        self.zeroVel = True
         self.smock = False
         self.smock_cons = 1.0 
         self.smock_size = 130
@@ -166,6 +166,7 @@ class FEMDiscreteShellBase(SimulationBase):
         self.use_s2 = False
         self.use_dist = False
         self.use_populate = False
+        self.use_ARAP = False
 
         # progressive smocking
         self.progressive = False
@@ -220,9 +221,16 @@ class FEMDiscreteShellBase(SimulationBase):
         # breakpoint()
         FEM.DiscreteShell.update_stitchingInfo(self.current_frame, self.stitching_seq, self.stitchInfo, self.stitchRatio, self.stitchInfo_0, self.stitchRatio_0)
         
-    def populate(self, start_idx, end_idx, stage_start, stage_size, scale, x_axis = Vector3d(1.0, 0.0, 0.0), y_axis = Vector3d(0.0, 1.0, 0.0)):
-        FEM.smock.Populate_pattern(self.X, self.stitchInfo, self.stitchRatio, self.Smock_pattern, start_idx, end_idx, stage_start, stage_size, scale, x_axis, y_axis)
-        FEM.smock.Populate_coarse_graph(self.X, self.X_load, self.Elem_smock_unmapped, start_idx, end_idx, stage_start, stage_size, scale, x_axis, y_axis, self.edgeStencil, self.edgeInfo)
+    def populate(self, start_idx, end_idx, stage_start, stage_size, scale, stitch = False, load = False, x_axis = Vector3d(1.0, 0.0, 0.0), y_axis = Vector3d(0.0, 1.0, 0.0)):
+        if stitch:
+            FEM.smock.Populate_pattern(self.X, self.stitchInfo, self.stitchRatio, self.Smock_pattern, start_idx, end_idx, stage_start, stage_size, scale, x_axis, y_axis)
+        else:
+            FEM.smock.Populate_pattern_hinge(self.X, self.rodHinge, self.rodHingeInfo, self.Smock_pattern, start_idx, end_idx, stage_start, stage_size, scale, x_axis, y_axis, self.cloth_Ebase_iso[0] * 500.0, 0.005)
+        
+        if load:
+            FEM.smock.Populate_coarse_graph(self.X, self.X_load, self.Elem_smock_unmapped, start_idx, end_idx, stage_start, stage_size, scale, x_axis, y_axis, self.edgeStencil, self.edgeInfo)
+        else:    
+            FEM.smock.Populate_coarse_graph(self.X, self.X, self.Elem_smock_unmapped, start_idx, end_idx, stage_start, stage_size, scale, x_axis, y_axis, self.edgeStencil, self.edgeInfo)
 
     def add_mannequin(self, filePath, translate, scale, rotCenter, rotAxis, rotDeg):
         meshCounter = FEM.DiscreteShell.Add_Shell(filePath, translate, scale, rotCenter, rotAxis, rotDeg, self.X, self.Elem, self.compNodeRange)
@@ -291,7 +299,7 @@ class FEMDiscreteShellBase(SimulationBase):
                 FEM.DiscreteShell.Add_Smock_Constraint(filepath_smock, filepath_smock_pattern, self.Elem_smock, self.smock_size , self.if_contact)
             self.dHat2 = FEM.DiscreteShell.Initialize_Shell_Hinge_EIPC_Smock(p_density, E, nu, thickness, self.dt, self.dHat2, self.X, self.X_smocking, self.Elem, self.Elem_smock, self.Elem_smock_unmapped, self.segs, \
             self.edge2tri, self.edgeStencil, self.edgeInfo, self.nodeAttr, self.massMatrix, self.gravity, self.bodyForce, \
-            self.elemAttr, self.elemAttr_smock, self.elasticity, self.elasticity_smock, self.kappa, self.smock_cons, self.Smock_pattern, self.coarse_mesh_res, self.use_s2, self.use_dist, self.use_populate)
+            self.elemAttr, self.elemAttr_smock, self.elasticity, self.elasticity_smock, self.kappa, self.smock_cons, self.Smock_pattern, self.coarse_mesh_res, self.use_s2, self.use_dist, self.use_populate, self.use_ARAP)
             # if self.use_s2:
             #     # print("The smocking stitching size: ", self.stitchInfo, "\n")
             #     FEM.DiscreteShell.vis_stitching(self.X, self.Elem_smock, self.stitchInfo)
@@ -367,8 +375,8 @@ class FEMDiscreteShellBase(SimulationBase):
     def Offset_smocking(self, offset_vector):
         FEM.DiscreteShell.offset_smocking(offset_vector, self.X, self.stitchInfo, self.fine_mesh_res)
 
-    def Offset_stitching(self, offset, smock_size):
-        FEM.smock.Offset_stitching(offset, self.X, self.stitchInfo, smock_size)
+    def Offset_stitching(self, offset):
+        FEM.smock.Offset_stitching(offset, self.X, self.Elem_smock_unmapped)
     
     def load_velocity(self, folderPath, lastFrame, h):
         MeshIO.Load_Velocity(folderPath, lastFrame, h, self.nodeAttr)

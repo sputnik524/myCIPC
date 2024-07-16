@@ -4,6 +4,7 @@
 #include <FEM/Shell/MEMBRANE.h>
 #include <FEM/Shell/SMOCK_MEMBRANE.h>
 #include <FEM/Shell/BENDING.h>
+#include <FEM/Shell/EDGE_BENDING.h>
 #include <FEM/Shell/INEXT.h>
 #include <FEM/Shell/ANISO_INEXT.h>
 #include <FEM/Shell/Rod/ROD_STRETCHING.h>
@@ -260,7 +261,12 @@ bool Compute_IncPotential(
 
         // rod spring
         Compute_Rod_Spring_Energy(X, rod, rodInfo, h, value);
-        Compute_Rod_Bending_Energy(X, rodHinge, rodHingeInfo, h, value);
+        // Compute_Rod_Bending_Energy(X, rodHinge, rodHingeInfo, h, value);
+        if (k_pin) {
+            std::cout << "Size of the edge closing Info: " << rodHinge.size() << std::endl;
+            Compute_Edge_Bending_Energy(h, rodHinge, rodHingeInfo, X, value);
+        }
+
 
         // garment
         std::cout << "Size of the stitching Info: " << stitchInfo.size() << std::endl;
@@ -518,7 +524,8 @@ void Compute_IncPotential_Gradient(
 
         // rod spring
         Compute_Rod_Spring_Gradient(X, rod, rodInfo, h, nodeAttr);
-        Compute_Rod_Bending_Gradient(X, rodHinge, rodHingeInfo, h, nodeAttr);
+        // Compute_Rod_Bending_Gradient(X, rodHinge, rodHingeInfo, h, nodeAttr);
+        Compute_Edge_Bending_Gradient(h, rodHinge, rodHingeInfo, X, nodeAttr);
 
         // garment
         Compute_Stitch_Gradient(X, stitchInfo, stitchRatio, DBCb, k_stitch, h, nodeAttr);
@@ -786,7 +793,8 @@ void Compute_IncPotential_Hessian(
         }
 
         Compute_Rod_Spring_Hessian(X, rod, rodInfo, h, projectSPD, triplets);
-        Compute_Rod_Bending_Hessian(X, rodHinge, rodHingeInfo, h, projectSPD, triplets);
+        // Compute_Rod_Bending_Hessian(X, rodHinge, rodHingeInfo, h, projectSPD, triplets);
+        Compute_Edge_Bending_Hessian(h, projectSPD, rodHinge, rodHingeInfo, X, triplets);
 
         // garment
         Compute_Stitch_Hessian(X, stitchInfo, stitchRatio, DBCb, k_stitch, h, projectSPD, triplets);

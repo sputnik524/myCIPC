@@ -120,6 +120,68 @@ void g_RB(T v01, T v02, T v03, T v11, T v12, T v13,
 }
 
 template <class T>
+void g_EB(T a0, T b0, T c0, T a1, T b1, T c1,
+          T a2, T b2, T c2, T g[9])
+{
+  double sigma12 = pow(a1 - a2, 2) + pow(b1 - b2, 2) + pow(c1 - c2, 2);
+  double sigma11 = sqrt((pow(a0 - a1, 2) + pow(b0 - b1, 2) + pow(c0 - c1, 2)) * sigma12);
+
+  // Calculate σ10
+  double sigma10 = (a0 - a1) * (a1 - a2) + (b0 - b1) * (b1 - b2) + (c0 - c1) * (c1 - c2) + sigma11;
+
+  // Calculate σ1, σ2, σ3, σ4, σ5
+  double sigma1 = 2 * (b0 - b1) * (c1 - c2) - 2 * (b1 - b2) * (c0 - c1);
+  double sigma2 = 2 * (a0 - a1) * (c1 - c2) - 2 * (a1 - a2) * (c0 - c1);
+  double sigma3 = 2 * (a0 - a1) * (b1 - b2) - 2 * (a1 - a2) * (b0 - b1);
+  double sigma4 = 2 * c1 - 2 * c2;
+  double sigma5 = 2 * b1 - 2 * b2;
+
+  // Calculate σ6, σ7, σ8, σ9
+  double sigma6 = 2 * a1 - 2 * a2;
+  double sigma7 = c1 - c2 + ((2 * c0 - 2 * c1) * sigma12) / (2 * sigma11);
+  double sigma8 = b1 - b2 + ((2 * b0 - 2 * b1) * sigma12) / (2 * sigma11);
+  double sigma9 = a1 - a2 + ((2 * a0 - 2 * a1) * sigma12) / (2 * sigma11);
+
+  // Calculate the final large formula
+  g[0] = (2 * sigma3 * sigma5 / pow(sigma10, 2)) + (2 * sigma2 * sigma4 / pow(sigma10, 2)) 
+                        - (2 * pow(sigma3, 2) * sigma9 / pow(sigma10, 3)) - (2 * pow(sigma2, 2) * sigma9 / pow(sigma10, 3)) 
+                        - (2 * pow(sigma1, 2) * sigma9 / pow(sigma10, 3));
+  g[1] = (2 * sigma1 * sigma4 / pow(sigma10, 2)) - (2 * sigma3 * sigma6 / pow(sigma10, 2)) - (2 * pow(sigma3, 2) * sigma8 / pow(sigma10, 3))
+                        - (2 * pow(sigma2, 2) * sigma8 / pow(sigma10, 3)) - (2 * pow(sigma1, 2) * sigma8 / pow(sigma10, 3));
+  g[2] = - (2 * sigma2 * sigma6 / pow(sigma10, 2)) - (2 * sigma1 * sigma5 / pow(sigma10, 2)) - (2 * pow(sigma1, 2) * sigma7 / pow(sigma10, 3)) - (2 * pow(sigma3, 2) * sigma7 / pow(sigma10, 3)) 
+                        - (2 * pow(sigma2, 2) * sigma7 / pow(sigma10, 3));     
+
+   sigma12 = pow(a1 - a2, 2) + pow(b1 - b2, 2) + pow(c1 - c2, 2);
+  double sigma13 = pow(a0 - a1, 2) + pow(b0 - b1, 2) + pow(c0 - c1, 2);
+   sigma11 = 2 * sqrt(sigma13 * sigma12);
+
+  // Calculate σ10
+   sigma10 = (a0 - a1) * (a1 - a2) + (b0 - b1) * (b1 - b2) + (c0 - c1) * (c1 - c2) + sqrt(sigma13 * sigma12);
+
+  // Calculate σ1, σ2, σ3, σ4, σ5, σ6
+   sigma1 = 2 * (b0 - b1) * (c1 - c2) - 2 * (b1 - b2) * (c0 - c1);
+   sigma2 = 2 * (a0 - a1) * (c1 - c2) - 2 * (a1 - a2) * (c0 - c1);
+   sigma3 = 2 * (a0 - a1) * (b1 - b2) - 2 * (a1 - a2) * (b0 - b1);
+   sigma4 = 2 * c0 - 2 * c2;
+   sigma5 = 2 * b0 - 2 * b2;
+   sigma6 = 2 * a0 - 2 * a2;
+
+  // Calculate σ7, σ8, σ9
+   sigma7 = c0 - 2 * c1 + c2 + ((2 * c1 - 2 * c2) * sigma13 - (2 * c0 - 2 * c1) * sigma12) / sigma11;
+   sigma8 = b0 - 2 * b1 + b2 + ((2 * b1 - 2 * b2) * sigma13 - (2 * b0 - 2 * b1) * sigma12) / sigma11;
+   sigma9 = a0 - 2 * a1 + a2 + ((2 * a1 - 2 * a2) * sigma13 - (2 * a0 - 2 * a1) * sigma12) / sigma11;  
+
+  g[3] = -(2 * sigma3 * sigma5 / pow(sigma10, 2)) - (2 * sigma2 * sigma4 / pow(sigma10, 2)) 
+                        - (2 * pow(sigma3, 2) * sigma9 / pow(sigma10, 3)) - (2 * pow(sigma2, 2) * sigma9 / pow(sigma10, 3)) 
+                        - (2 * pow(sigma1, 2) * sigma9 / pow(sigma10, 3));
+  g[4] = -(2 * sigma1 * sigma4 / pow(sigma10, 2)) + (2 * sigma3 * sigma6 / pow(sigma10, 2)) - (2 * pow(sigma3, 2) * sigma8 / pow(sigma10, 3))
+                        - (2 * pow(sigma2, 2) * sigma8 / pow(sigma10, 3)) - (2 * pow(sigma1, 2) * sigma8 / pow(sigma10, 3));
+  g[5] = (2 * sigma2 * sigma6 / pow(sigma10, 2)) + (2 * sigma1 * sigma5 / pow(sigma10, 2)) - (2 * pow(sigma1, 2) * sigma7 / pow(sigma10, 3)) - (2 * pow(sigma3, 2) * sigma7 / pow(sigma10, 3)) 
+                        - (2 * pow(sigma2, 2) * sigma7 / pow(sigma10, 3));         
+
+}
+
+template <class T>
 void H_RB(T v01, T v02, T v03, T v11, T v12, T v13,
           T v21, T v22, T v23, T H[81])
 {

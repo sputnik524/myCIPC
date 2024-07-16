@@ -1273,7 +1273,7 @@ void Compute_Discrete_Shell_Inv_Basis_Smock(
     std::vector<VECTOR<T, 3>>& edgeInfo,
     MESH_ELEM_ATTR<T, dim - 1>& elemAttr,
     MESH_ELEM_ATTR<T, dim - 1>& elemAttr_smock, MESH_ELEM<dim - 1>& Smock_pattern,
-     bool use_S2, bool use_dist = false, bool use_populate = false)
+     bool use_S2, bool use_dist = false, bool use_populate = false, bool use_ARAP = false)
 {
     if constexpr (dim == 2) {
         //TODO
@@ -1341,9 +1341,9 @@ void Compute_Discrete_Shell_Inv_Basis_Smock(
             else
             {   
                 if (use_populate)
-                    IB = compute_ref(elemVInd, X, Smock_pattern);
+                    IB = compute_ref(elemVInd, X, Smock_pattern, use_ARAP);
                 else
-                    IB = compute_ref(elemVInd, X_smock, Smock_pattern);
+                    IB = compute_ref(elemVInd, X_smock, Smock_pattern, use_ARAP);
 
                 // std::cout << "IB det: " << abs(IB.determinant()) << std::endl;
             }
@@ -1368,8 +1368,10 @@ void Compute_Discrete_Shell_Inv_Basis_Smock(
         });
 
         if constexpr (!KL) {
-            // edgeInfo.resize(0);
-            // edgeStencil.resize(0);
+            edgeInfo.clear();
+            edgeInfo.resize(0);
+            edgeStencil.clear();
+            edgeStencil.resize(0);
             for (int eI = 0; eI < edge.size(); ++eI) {
                 const auto triFinder = edge2tri.find(std::pair<int, int>(edge[eI][0], edge[eI][1]));
                 if (triFinder != edge2tri.end()) {
@@ -1437,7 +1439,7 @@ T Initialize_Discrete_Shell_Smock(
     FIXED_COROTATED<T, dim - 1>& elasticityAttr,
     FIXED_COROTATED<T, dim - 1>& elasticityAttr_smock,
     VECTOR<T, 3>& kappa, T smock_cons, MESH_ELEM<dim - 1>& Smock_pattern, int coarse_res,
-     bool use_S2 = false, bool use_dist = false, bool use_populate = false)
+     bool use_S2 = false, bool use_dist = false, bool use_populate = false, bool use_ARAP = false)
 {
     if constexpr (dim == 2) {
         //TODO
@@ -1525,7 +1527,7 @@ T Initialize_Discrete_Shell_Smock(
             Elem_smock_graph.Each([&](int id, auto data){
                 auto &[elemGraphVInd] = data;
                 MATRIX<T, dim - 1> IB;
-                IB = compute_ref(elemGraphVInd, X_smock, Smock_pattern);
+                IB = compute_ref(elemGraphVInd, X_smock, Smock_pattern, use_ARAP);
                 if(abs(IB.determinant()) > 1e-15) 
                     filteredElem_smock.Append(elemGraphVInd);                
             });
@@ -1541,9 +1543,9 @@ T Initialize_Discrete_Shell_Smock(
                 auto &[elemGraphVInd] = data;
                 MATRIX<T, dim - 1> IB;
                 if (use_populate)
-                    IB = compute_ref(elemGraphVInd, X, Smock_pattern);
+                    IB = compute_ref(elemGraphVInd, X, Smock_pattern, use_ARAP);
                 else
-                    IB = compute_ref(elemGraphVInd, X_smock, Smock_pattern);
+                    IB = compute_ref(elemGraphVInd, X_smock, Smock_pattern, use_ARAP);
                 if(abs(IB.determinant()) > 1e-15) 
                     filteredElem_smock.Append(elemGraphVInd);                
             });
@@ -1577,7 +1579,7 @@ T Initialize_Discrete_Shell_Smock(
         else if (!use_dist)
             Compute_Discrete_Shell_Inv_Basis_Smock<T, dim, KL>(X, X_smock, Elem, Elem_smock_unmapped, edge2tri, edge, edgeStencil, edgeInfo, elemAttr, elemAttr_smock, Smock_pattern, use_S2);
         else
-            Compute_Discrete_Shell_Inv_Basis_Smock<T, dim, KL>(X, X_smock, Elem, Elem_smock, edge2tri, edge, edgeStencil, edgeInfo, elemAttr, elemAttr_smock, Smock_pattern, use_S2, use_dist, use_populate);
+            Compute_Discrete_Shell_Inv_Basis_Smock<T, dim, KL>(X, X_smock, Elem, Elem_smock, edge2tri, edge, edgeStencil, edgeInfo, elemAttr, elemAttr_smock, Smock_pattern, use_S2, use_dist, use_populate, use_ARAP);
 
         // mass matrix and body force
         std::vector<Eigen::Triplet<T>> triplets;

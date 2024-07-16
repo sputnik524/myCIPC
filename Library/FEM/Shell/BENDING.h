@@ -71,6 +71,13 @@ void Compute_Bending_Energy(
                     T theta;
                     Compute_Dihedral_Angle(x0e, x1e, x2e, x3e, theta);
 
+                    // T eplison = 1e-10;
+                    // if(std::abs(theta - thetabar) < eplison)
+                    // {
+                    //     continue;
+                    // }
+                        
+
                     E += h * h * k * (theta - thetabar) * (theta - thetabar) * ebarnorm / hbar;
                 }
             }
@@ -194,6 +201,14 @@ void Compute_Bending_Gradient(
 
                     T theta;
                     Compute_Dihedral_Angle(x0e, x1e, x2e, x3e, theta);
+
+                    // T eplison = 1e-10;
+                    // if(std::abs(theta - thetabar) < eplison)
+                    // {
+                    //     continue;
+                    // }
+                        
+
                     Eigen::Matrix<T, 12, 1> grad;
                     Compute_Dihedral_Angle_Gradient(x0e, x1e, x2e, x3e, grad);
 
@@ -465,6 +480,23 @@ void Compute_Bending_Hessian(
                         const T thetabar = edgeInfo[eI][0];
                         const T ebarnorm = edgeInfo[eI][1];
                         const T hbar = edgeInfo[eI][2];
+
+                        // T theta;
+                        // Compute_Dihedral_Angle(x0e, x1e, x2e, x3e, theta);
+
+                        // T eplison = 1e-10;
+
+                        // Eigen::Matrix<T, 12, 1> grad;
+                        // grad.setZero();
+                        // Eigen::Matrix<T, 12, 12> H;
+                        // grad.setZero();
+
+                        // if(std::abs(theta - thetabar) > eplison)
+                        // {
+                        //     Compute_Dihedral_Angle_Gradient(x0e, x1e, x2e, x3e, grad);
+                        //     Compute_Dihedral_Angle_Hessian(x0e, x1e, x2e, x3e, H);
+                        // }
+
 
                         T theta;
                         Compute_Dihedral_Angle(x0e, x1e, x2e, x3e, theta);

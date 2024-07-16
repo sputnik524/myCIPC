@@ -16,11 +16,32 @@ void Compute_Dihedral_Angle(
 {
     const Eigen::Matrix<T, 3, 1> n1 = (v1 - v0).cross(v2 - v0);
     const Eigen::Matrix<T, 3, 1> n2 = (v2 - v3).cross(v1 - v3);
+
+    T epsilon = 1e-10;
+    if(n1.norm() < epsilon || n2.norm() < epsilon){
+      DA = 0.0;
+      return;
+    }
+      
     DA = std::acos(std::max(T(-1), std::min(T(1), 
       n1.dot(n2) / std::sqrt(n1.squaredNorm() * n2.squaredNorm()))));
     if (n2.cross(n1).dot(v1 - v2) < 0) {
       DA = -DA;
     }
+}
+
+template <class T>
+void Compute_Edge_Angle(
+    const Eigen::Matrix<T, 3, 1>& v0,
+    const Eigen::Matrix<T, 3, 1>& v1,
+    const Eigen::Matrix<T, 3, 1>& v2,
+    T& DA)
+{
+    const Eigen::Matrix<T, 3, 1> e0 = v1 - v0;
+    const Eigen::Matrix<T, 3, 1> e1 = v2 - v1;
+
+    DA = std::acos(std::max(T(-1), std::min(T(1), 
+      e0.dot(e1) / std::sqrt(e0.squaredNorm() * e1.squaredNorm()))));
 }
 
 template <class T>
@@ -197,6 +218,36 @@ void Compute_Dihedral_Angle_Gradient(
     grad.template segment<3>(3) = -e0.dot(e3) / (e0norm * n1SqNorm) * n1 - e0.dot(e4) / (e0norm * n2SqNorm) * n2;
     grad.template segment<3>(6) = e0.dot(e1) / (e0norm * n1SqNorm) * n1 + e0.dot(e2) / (e0norm * n2SqNorm) * n2;
     grad.template segment<3>(9) = -e0norm / n2SqNorm * n2;
+
+    // T tol = 1e-10;
+    // if (n1SqNorm < tol || n2SqNorm < tol){
+    //   grad = Eigen::MatrixXd::Zero(9, 1);
+    // }
+}
+
+template <class T>
+void Compute_Edge_Angle_Gradient(
+    const Eigen::Matrix<T, 3, 1>& v0, // here we map our v order to rusmas' in this function for implementation convenience
+    const Eigen::Matrix<T, 3, 1>& v1,
+    const Eigen::Matrix<T, 3, 1>& v2,
+    Eigen::Matrix<T, 9, 1>& grad)
+{
+    Eigen::Matrix<T, 3, 1> e0 = v1 - v0;
+    Eigen::Matrix<T, 3, 1> e1 = v2 - v1;
+
+    T e0SqNorm = e0.squaredNorm();
+    T e1SqNorm = e1.squaredNorm();
+
+    T e0Norm = e0.norm();
+    T e1Norm = e1.norm();
+
+    grad.template segment<3>(0) =  - e0Norm * e1Norm * e1 + e0.dot(e1) * e1Norm / e0Norm * e0;
+    grad.template segment<3>(3) = e0Norm * e1Norm * (e1 - e0) - e0.dot(e1) * (e1Norm / e0Norm * e0 - e0Norm / e1Norm * e1);
+    grad.template segment<3>(6) = e0Norm * e1Norm * e0 - e0.dot(e1) * e0Norm / e1Norm * e1;
+
+    grad.template segment<3>(0) *= 1.0 / (e0SqNorm * e1SqNorm);
+    grad.template segment<3>(3) *= 1.0 / (e0SqNorm * e1SqNorm);
+    grad.template segment<3>(6) *= 1.0 / (e0SqNorm * e1SqNorm);
 }
 
 template <class T>
@@ -1276,5 +1327,89 @@ void Compute_Dihedral_Angle_Hessian(
 
     Hess.template block<3, 3>(9, 9) = -(N2_02 + N2_02.transpose());
 }
+
+// template <class T>
+// void Compute_Edge_Angle_Hessian(
+//     const Eigen::Matrix<T, 3, 1>& v0,
+//     const Eigen::Matrix<T, 3, 1>& v1,
+//     const Eigen::Matrix<T, 3, 1>& v2,
+//     Eigen::Matrix<T, 9, 9>& hess)
+// {
+//     Eigen::Matrix<T, 3, 1> e0 = v1 - v0;
+//     Eigen::Matrix<T, 3, 1> e1 = v2 - v1;
+
+//     T e0SqNorm = e0.squaredNorm();
+//     T e1SqNorm = e1.squaredNorm();
+
+//     T e0Norm = e0.norm();
+//     T e1Norm = e1.norm();
+
+//     Eigen::Matrix<T, 3, 3> H11_0 = e1Norm / e0Norm * e1 * e0.transpose() / (e0SqNorm * e1SqNorm);
+//     Eigen::Matrix<T, 3, 1> H11_1_0 = - e0Norm * e1Norm * e1 + e0.dot(e1) * e1Norm / e0Norm * e0;
+//     H11_1_0 /= e0SqNorm * e1SqNorm;
+//     Eigen::Matrix<T, 3, 3> H11_1 =  e0 * H11_1_0.transpose()/ e0SqNorm ;
+//     Eigen::Matrix<T, 3, 3> H11_2 = - e0SqNorm * Eigen::Matrix::Identity(3,3) + 2 * e0 * e0.transpose();
+//     H11_2 /= e0SqNorm * e0SqNorm;
+//     H11_2 *= e0.dot(e1) / (e0Norm * e1Norm);
+    
+//     Hess.template block<3, 3>(0, 0) = - H11_0 + H11_1 + H11_2;
+
+//     Eigen::Matrix<T, 3, 3> H22_1_0 = - 2 * e0Norm * e1Norm * Eigen::Matrix::Identity(3,3);
+//     Eigen::Matrix<T, 3, 3> H22_1_1 = - (e1 - e0) * ((e1Norm / e0Norm * e0 - e0Norm / e1Norm * e1).transpose());
+//     Eigen::Matrix<T, 3, 3> H22_1 = (H22_0 + H22_1) / (e0SqNorm * e1SqNorm);
+
+//     Eigen::Matrix<T, 3, 1> H22_2_0 = e0 / e0SqNorm - e1 / e1SqNorm;
+//     Eigen::Matrix<T, 3, 1> H22_2_1 = e0Norm * e1Norm * (e1 - e0) - e0.dot(e1) * (e1Norm / e0Norm * e0 - e0Norm / e1Norm * e1);
+//     Eigen::Matrix<T, 3, 3> H22_2_2 = H22_2_0 * H22_2_1.transpose();
+
+//     Eigen::Matrix<T, 3, 3> H22_2_3_0 = e0SqNorm * Eigen::Matrix::Identity(3,3) - 2.0 * e0 * e0.transpose();
+//     H22_2_3_0 /= e0SqNorm * e0SqNorm;
+//     Eigen::Matrix<T, 3, 3> H22_2_3_1 = - e1SqNorm * Eigen::Matrix::Identity(3,3) + 2.0 * e1 * e1.transpose();
+//     H22_2_3_1 /= e1SqNorm * e1SqNorm;
+//     Eigen::Matrix<T, 3, 3> H22_2_3 = H22_2_3_0 - H22_2_3_1;
+//     H22_2_3 *= e0.dot(e1) / (e0Norm * e1Norm);
+
+//     Hess.template block<3, 3>(3, 3) = H22_1 - H22_2_2 - H22_2_3;
+
+//     Eigen::Matrix<T, 3, 3> H33_0 = e0Norm / e1Norm * e0 * e1.transpose() / (e0SqNorm * e1SqNorm);
+//     Eigen::Matrix<T, 3, 1> H33_1_0 = e0Norm * e1Norm * e0 - e0.dot(e1) * e0Norm / e1Norm * e1;
+//     H33_1_0 /= e0SqNorm * e1SqNorm;
+//     Eigen::Matrix<T, 3, 3> H33_1 = e1 * H33_1_0.transpose() / e1SqNorm ;
+//     Eigen::Matrix<T, 3, 3> H33_2 = e1SqNorm * Eigen::Matrix::Identity(3,3) - 2 * e1 * e1.transpose();
+//     H33_2 /= e1SqNorm * e1SqNorm;
+//     H33_2 *= e0.dot(e1) / (e0Norm * e1Norm);
+    
+//     Hess.template block<3, 3>(6, 6) = - H33_0 - H33_1 - H33_2;
+
+//     Eigen::Matrix<T, 3, 3> H12_0_0 = e0Norm * e1Norm * Eigen::Matrix::Identity(3,3);
+//     Eigen::Matrix<T, 3, 3> H12_0_1 = e1 * ((e1Norm / e0Norm * e0 - e0Norm / e1Norm * e1).transpose());
+//     Eigen::Matrix<T, 3, 3> H12_0 =  (H12_0_0 - H12_0_1) / (e1SqNorm * e1SqNorm);
+
+//     Eigen::Matrix<T, 3, 3> H12_1_0 = e0 / e0SqNorm;
+//     Eigen::Matrix<T, 3, 1> H12_1_1 = e0Norm * e1Norm * (e1 - e0) - e0.dot(e1) * (e1Norm / e0Norm * e0 - e0Norm / e1Norm * e1);
+//     Eigen::Matrix<T, 3, 3> H12_1 = H12_1_0 * H12_1_1.transpose();
+
+//     Eigen::Matrix<T, 3, 3> H12_2_0 = e0SqNorm * Eigen::Matrix::Identity(3,3) - 2.0 * e0 * e0.transpose();
+//     H12_2_0 /= e0SqNorm * e0SqNorm;
+//     Eigen::Matrix<T, 3, 3> H12_2 = e0.dot(e1) / (e0Norm * e1Norm) * H12_2_0;
+
+//     Hess.template block<3, 3>(0, 3) = H12_0 + H12_1 + H12_2;
+
+//     Eigen::Matrix<T, 3, 3> H12_0_0 = e0Norm * e1Norm * Eigen::Matrix::Identity(3,3);
+//     Eigen::Matrix<T, 3, 3> H12_0_1 = e1 * ((e1Norm / e0Norm * e0 - e0Norm / e1Norm * e1).transpose());
+//     Eigen::Matrix<T, 3, 3> H12_0 =  (H12_0_0 - H12_0_1) / (e1SqNorm * e1SqNorm);
+
+//     Eigen::Matrix<T, 3, 3> H12_1_0 = e0 / e0SqNorm;
+//     Eigen::Matrix<T, 3, 1> H12_1_1 = e0Norm * e1Norm * (e1 - e0) - e0.dot(e1) * (e1Norm / e0Norm * e0 - e0Norm / e1Norm * e1);
+//     Eigen::Matrix<T, 3, 3> H12_1 = H12_1_0 * H12_1_1.transpose();
+
+//     Eigen::Matrix<T, 3, 3> H12_2_0 = e0SqNorm * Eigen::Matrix::Identity(3,3) - 2.0 * e0 * e0.transpose();
+//     H12_2_0 /= e0SqNorm * e0SqNorm;
+//     Eigen::Matrix<T, 3, 3> H12_2 = e0.dot(e1) / (e0Norm * e1Norm) * H12_2_0;
+
+//     Hess.template block<3, 3>(0, 3) = H12_0 + H12_1 + H12_2;
+
+// }
+
 
 }

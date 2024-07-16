@@ -98,7 +98,7 @@ double compute_edge_length(int v1, int v2, int pleat_1, int pleat_2, MESH_NODE<T
 }
 
 template <class T, int dim = 3>
-MATRIX<T, dim - 1> compute_ref(const VECTOR<int, 3>& tri_elem, MESH_NODE<T, dim>& X, MESH_ELEM<dim - 1>& Smock_pattern){
+MATRIX<T, dim - 1> compute_ref(const VECTOR<int, 3>& tri_elem, MESH_NODE<T, dim>& X, MESH_ELEM<dim - 1>& Smock_pattern, bool use_ARAP){
     
     // std::cout << "Current graph elem: " << tri_elem[0] << " " << tri_elem[1] << " " << tri_elem[2] << std::endl;
     
@@ -127,25 +127,40 @@ MATRIX<T, dim - 1> compute_ref(const VECTOR<int, 3>& tri_elem, MESH_NODE<T, dim>
 
     // std::cout << "Current edge length: " << length01 << " " << length12 << " " << length20 << std::endl;
 
-    if(length01 < INT_MIN || length12 < INT_MIN || length20 < INT_MIN)
-    {
-        //degenerated edge
-        IB(0,0) = IB(1,1) = 1.0;
-        IB(1,0) = IB(0,1) = 1.0;
-    }
+    if(use_ARAP){
+        const VECTOR<T, dim>& x1 = std::get<0>(X.Get_Unchecked(tri_elem[0]));
+        const VECTOR<T, dim>& x2 = std::get<0>(X.Get_Unchecked(tri_elem[1]));
+        const VECTOR<T, dim>& x3 = std::get<0>(X.Get_Unchecked(tri_elem[2]));
 
-    else
-    {
-        IB(0,0) = length01 * length01;
-        IB(1,1) = length20 * length20;
-        IB(0,1) = IB(1,0) = 0.5 * (length01 * length01 - length12 * length12 + length20 * length20);// given a,b,c, want ab*cos(C),law of cosine
+        const VECTOR<T, dim> e01 = x2 - x1;
+        const VECTOR<T, dim> e02 = x3 - x1;
+
+        IB(0, 0) = e01[0];
+        IB(0, 1) = e01[1];
+        IB(1, 0) = e02[0];
+        IB(1, 1) = e02[1];
+    }
     
-        if(IB.determinant() < 0.0){ // PREVENT LAW OF TRI
+    else{
+        if(length01 < INT_MIN || length12 < INT_MIN || length20 < INT_MIN)
+        {
+            //degenerated edge
             IB(0,0) = IB(1,1) = 1.0;
             IB(1,0) = IB(0,1) = 1.0;
         }
-    }
 
+        else
+        {
+            IB(0,0) = length01 * length01;
+            IB(1,1) = length20 * length20;
+            IB(0,1) = IB(1,0) = 0.5 * (length01 * length01 - length12 * length12 + length20 * length20);// given a,b,c, want ab*cos(C),law of cosine
+        
+            if(IB.determinant() < 0.0){ // PREVENT LAW OF TRI
+                IB(0,0) = IB(1,1) = 1.0;
+                IB(1,0) = IB(0,1) = 1.0;
+            }
+        }
+    }
     return IB;
 }
 
