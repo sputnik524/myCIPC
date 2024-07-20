@@ -212,6 +212,11 @@ void Compute_Dihedral_Angle_Gradient(
     T n1SqNorm = n1.squaredNorm();
     T n2SqNorm = n2.squaredNorm();
     T e0norm = e0.norm();
+    // T tol = 1e-10;
+    // if (n1SqNorm < tol || n2SqNorm < tol){
+    //   grad = Eigen::MatrixXd::Zero(12, 1);
+    //   return;
+    // }
 
     // fill in gradient in order with g2, g0, g1, g3 in rusmas' doc
     grad.template segment<3>(0) = -e0norm / n1SqNorm * n1;
@@ -219,10 +224,6 @@ void Compute_Dihedral_Angle_Gradient(
     grad.template segment<3>(6) = e0.dot(e1) / (e0norm * n1SqNorm) * n1 + e0.dot(e2) / (e0norm * n2SqNorm) * n2;
     grad.template segment<3>(9) = -e0norm / n2SqNorm * n2;
 
-    // T tol = 1e-10;
-    // if (n1SqNorm < tol || n2SqNorm < tol){
-    //   grad = Eigen::MatrixXd::Zero(9, 1);
-    // }
 }
 
 template <class T>
@@ -1261,6 +1262,11 @@ void Compute_Dihedral_Angle_Hessian(
     Eigen::Matrix<T, 3, 1> n2 = e[2].cross(e[0]);
     T n1norm = n1.norm();
     T n2norm = n2.norm();
+    // T tol = 1e-6;
+    // if (n1norm < tol || n2norm < tol){
+    //   Hess = Eigen::MatrixXd::Zero(12, 12);
+    //   return;
+    // }
 
     Eigen::Matrix<T, 3, 1> mHat1, mHat2, mHat3, mHat4, mHat01, mHat02;
     Compute_mHat(v1, v0, v2, mHat1);

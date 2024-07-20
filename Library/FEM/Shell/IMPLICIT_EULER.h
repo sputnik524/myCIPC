@@ -1352,6 +1352,8 @@ int Advance_One_Step_IE_Discrete_Shell_smock(
     do {
         // Check_Membrane_Gradient(Elem, DBC, h, X, nodeAttr, M, elemAttr, elasticityAttr);
         // Check_Membrane_Hessian(Elem, DBC, h, X, nodeAttr, M, elemAttr, elasticityAttr);
+        // Check_Smock_Membrane_Gradient(Elem_smock, X, nodeAttr, elemAttr_smock, elasticityAttr_smock);
+        // Check_Smock_Membrane_Hessian(Elem_smock, X, nodeAttr, elemAttr_smock, elasticityAttr_smock);
         // Check_Bending_Gradient<T, dim, KL>(Elem, DBC, h, edge2tri, edgeStencil, edgeInfo, thickness, X, nodeAttr, M, elemAttr, elasticityAttr);
         // Check_Bending_Hessian<T, dim, KL>(Elem, DBC, h, edge2tri, edgeStencil, edgeInfo, thickness, X, nodeAttr, M, elemAttr, elasticityAttr);
         // Check_Fiber_Gradient(Elem, DBC, h, fiberStiffMult, X, nodeAttr, M, elemAttr, elasticityAttr);

@@ -225,7 +225,7 @@ class FEMDiscreteShellBase(SimulationBase):
         if stitch:
             FEM.smock.Populate_pattern(self.X, self.stitchInfo, self.stitchRatio, self.Smock_pattern, start_idx, end_idx, stage_start, stage_size, scale, x_axis, y_axis)
         else:
-            FEM.smock.Populate_pattern_hinge(self.X, self.rodHinge, self.rodHingeInfo, self.Smock_pattern, start_idx, end_idx, stage_start, stage_size, scale, x_axis, y_axis, self.cloth_Ebase_iso[0] * 500.0, 0.005)
+            FEM.smock.Populate_pattern_hinge(self.X, self.rodHinge, self.rodHingeInfo, self.Smock_pattern, start_idx, end_idx, stage_start, stage_size, scale, x_axis, y_axis, self.cloth_Ebase_iso[0] * 750.0, 0.005)
         
         if load:
             FEM.smock.Populate_coarse_graph(self.X, self.X_load, self.Elem_smock_unmapped, start_idx, end_idx, stage_start, stage_size, scale, x_axis, y_axis, self.edgeStencil, self.edgeInfo)

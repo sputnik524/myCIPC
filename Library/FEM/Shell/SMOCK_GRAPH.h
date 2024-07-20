@@ -136,8 +136,8 @@ MATRIX<T, dim - 1> compute_ref(const VECTOR<int, 3>& tri_elem, MESH_NODE<T, dim>
         const VECTOR<T, dim> e02 = x3 - x1;
 
         IB(0, 0) = e01[0];
-        IB(0, 1) = e01[1];
-        IB(1, 0) = e02[0];
+        IB(1, 0) = e01[1];
+        IB(0, 1) = e02[0];
         IB(1, 1) = e02[1];
     }
     

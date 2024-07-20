@@ -1368,10 +1368,10 @@ void Compute_Discrete_Shell_Inv_Basis_Smock(
         });
 
         if constexpr (!KL) {
-            edgeInfo.clear();
-            edgeInfo.resize(0);
-            edgeStencil.clear();
-            edgeStencil.resize(0);
+            // edgeInfo.clear();
+            // edgeInfo.resize(0);
+            // edgeStencil.clear();
+            // edgeStencil.resize(0);
             for (int eI = 0; eI < edge.size(); ++eI) {
                 const auto triFinder = edge2tri.find(std::pair<int, int>(edge[eI][0], edge[eI][1]));
                 if (triFinder != edge2tri.end()) {

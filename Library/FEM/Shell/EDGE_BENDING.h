@@ -64,14 +64,14 @@ void Compute_Edge_Bending_Gradient(
             g_kappa2[6+j] *= -1.0;
         }
 
-        if (hingeI[0] == 1956){
-            std::cout << "First closing pair pos: " << x0[0]<< " " << x0[1]<< " " << x0[2] << std::endl;
-            std::cout  << x1[0]<< " " << x1[1]<< " " << x1[2] << std::endl;
-            std::cout  << x2[0]<< " " << x2[1]<< " " << x2[2] << std::endl;
-            std::cout << "g_kappa2 after transform: " << g_kappa2[0]<< " " << g_kappa2[1]<< " " << g_kappa2[2] << std::endl;
-            std::cout  << g_kappa2[3]<< " " << g_kappa2[4]<< " " << g_kappa2[5] << std::endl;
-            std::cout  << g_kappa2[6]<< " " << g_kappa2[7]<< " " << g_kappa2[8] << std::endl;
-        }
+        // if (hingeI[0] == 1956){
+        //     std::cout << "First closing pair pos: " << x0[0]<< " " << x0[1]<< " " << x0[2] << std::endl;
+        //     std::cout  << x1[0]<< " " << x1[1]<< " " << x1[2] << std::endl;
+        //     std::cout  << x2[0]<< " " << x2[1]<< " " << x2[2] << std::endl;
+        //     std::cout << "g_kappa2 after transform: " << g_kappa2[0]<< " " << g_kappa2[1]<< " " << g_kappa2[2] << std::endl;
+        //     std::cout  << g_kappa2[3]<< " " << g_kappa2[4]<< " " << g_kappa2[5] << std::endl;
+        //     std::cout  << g_kappa2[6]<< " " << g_kappa2[7]<< " " << g_kappa2[8] << std::endl;
+        // }
 
         const T w = h * h / rodHingeInfo[i][1] *
             rodHingeInfo[i][0] * std::pow(rodHingeInfo[i][2], 4) * M_PI / 64;

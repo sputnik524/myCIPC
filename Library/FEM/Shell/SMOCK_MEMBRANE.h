@@ -45,7 +45,7 @@ void compute_pFpX(const Eigen::Matrix2d& Dm_iInv, Eigen::Matrix<T, 6, 9>& pF_ipX
     pF_ipX(5,8) = b11;
 }
 
-template<class T, int dim, bool useNH = true, bool useARAP = false>
+template<class T, int dim, bool useNH = true, bool useARAP = true>
 void Compute_Smock_Membrane_Energy(
     MESH_ELEM<dim - 1>& Elem, MESH_ELEM<dim - 1>& Elem_smock, T h,
     const std::vector<bool>& DBCb,
@@ -143,6 +143,11 @@ void Compute_Smock_Membrane_Energy(
                     Ds << x2e - x1e, x3e - x1e;
                     tri_F = Ds * Dm_iInv;
 
+                    // if(id == 0){    
+                    //     printf("tri_F row 0: 00 = %le, 01 = %le, 02 = %le\n", tri_F(0,0), tri_F(0,1), tri_F(0,2));
+                    //     printf("tri_F row 1: 10 = %le, 11 = %le, 12 = %le\n", tri_F(1,0), tri_F(1,1), tri_F(1,2));
+                    // }
+                    
 
                     T i1 = tri_F.squaredNorm();
                     T i3 = (tri_F.transpose() * tri_F).determinant();
@@ -178,12 +183,12 @@ void Compute_Smock_Membrane_Energy(
             }
         });
 
-        std::cout << "Underlay distortion energy change: " << E - E_0 << std::endl;
+        // std::cout << "Underlay distortion energy change: " << E - E_0 << std::endl;
 
     }
 }
 
-template<class T, int dim, bool useNH = true, bool useARAP = false>
+template<class T, int dim, bool useNH = true, bool useARAP = true>
 void Compute_Smock_Membrane_Gradient(
     MESH_ELEM<dim - 1>& Elem, MESH_ELEM<dim - 1>& Elem_smock, T h,
     const std::vector<bool>& DBCb,
@@ -250,7 +255,6 @@ void Compute_Smock_Membrane_Gradient(
             }
         });
 
-        int degenerated_smock_elems = 0;
         Elem_smock.Join(elasticityAttr_smock).Each([&](int id, auto data) {
             auto &[elemVInd, F, vol, lambda, mu] = data;
             if (!(DBCb[elemVInd[0]] && DBCb[elemVInd[1]] && DBCb[elemVInd[2]])) {
@@ -312,14 +316,14 @@ void Compute_Smock_Membrane_Gradient(
                     T f1 = 0.5 / t2;
                     T f2 = 0.;
                     T f3 = 0.5 / (t2 * sqrt(i3));
-                    Eigen::Matrix<T, 6, 1> pEpf = h * h * vol * 0.5 * ((1.0 - 2 * f1) * g1 - 2.0 * f3 * g3); // TODO: check 0.5 * 
+                    Eigen::Matrix<T, 6, 1> pEpf = h * h * vol * mu * 0.5 * ((1.0 - 2 * f1) * g1 - 2.0 * f3 * g3); // TODO: check 0.5 * 
                     Eigen::Matrix<T, 9, 1> pEpX = pF_ipX.transpose() * pEpf;
 
                     for (int endI = 0; endI < dim; ++endI) {
                         VECTOR<T, dim>& g = std::get<FIELDS<MESH_NODE_ATTR<T, dim>>::g>(nodeAttr.Get_Unchecked(elemVInd[endI]));
                         for (int dimI = 0; dimI < dim; ++dimI) {
                             int i = endI * dim + dimI;
-                            g[dimI] += pEpX(0, i);// TODO: check g & idx mapping
+                            g[dimI] += pEpX(i, 0);// TODO: check g & idx mapping
                         }
                     }
                 }
@@ -369,11 +373,10 @@ void Compute_Smock_Membrane_Gradient(
                 }
             }
         });
-        std::cout << "Number of degenerated_smock_elems: " << degenerated_smock_elems << std::endl;
     }
 }
 
-template<class T, int dim, bool useNH = true, bool useARAP = false>
+template<class T, int dim, bool useNH = true, bool useARAP = true>
 void Compute_Smock_Membrane_Hessian(
     MESH_ELEM<dim - 1>& Elem, 
     MESH_ELEM<dim - 1>& Elem_smock, 
@@ -609,9 +612,9 @@ void Compute_Smock_Membrane_Hessian(
                     g3(1,0) = 2.0 * d * tri_F(1,0) - (b+c) * tri_F(1,1);
                     g3(2,0) = 2.0 * d * tri_F(2,0) - (b+c) * tri_F(2,1);
 
-                    g3(3,0) = 2.0 * a * tri_F(0,1) - (b+c) * tri_F(0,0);
-                    g3(4,0) = 2.0 * a * tri_F(1,1) - (b+c) * tri_F(1,0);
-                    g3(5,0) = 2.0 * a * tri_F(2,1) - (b+c) * tri_F(2,0);
+                    g3(0,1) = 2.0 * a * tri_F(0,1) - (b+c) * tri_F(0,0);
+                    g3(1,1) = 2.0 * a * tri_F(1,1) - (b+c) * tri_F(1,0);
+                    g3(2,1) = 2.0 * a * tri_F(2,1) - (b+c) * tri_F(2,0);
 
                     Eigen::Matrix<T, dim, 2> R = f1 * g1 + f2 * g2 + f3 * g3;
                     Eigen::Matrix2d S = R.transpose() * tri_F;
@@ -630,7 +633,7 @@ void Compute_Smock_Membrane_Hessian(
                     U_thin = R * V;
                     U.col(0) = U_thin.col(0);
                     U.col(1) = U_thin.col(1);
-                    VECTOR<T, 3> deformed_n = cross(x2 - x1, x3 - x1);
+                    const VECTOR<T, dim> deformed_n = cross(x2 - x1, x3 - x1).Normalized();
                     U.col(2)[0] = deformed_n[0];
                     U.col(2)[1] = deformed_n[1];
                     U.col(2)[2] = deformed_n[2];
@@ -666,9 +669,9 @@ void Compute_Smock_Membrane_Hessian(
                     lambda1 = 1.0 / sigma1;
                     lambda2 = 1.0 / sigma2;
 
-                    if (sigma1 + sigma2 < 2)lambda0 = 1;
-                    if (sigma1 < 1)lambda1 = 1;
-                    if (sigma2 < 1)lambda2 = 1;
+                    // if (sigma1 + sigma2 < 2)lambda0 = 1; // This clamp is problematic in checking Hessian
+                    // if (sigma1 < 1)lambda1 = 1;
+                    // if (sigma2 < 1)lambda2 = 1;
 
                     Eigen::Matrix<T, 6, 6> SH = Eigen::Matrix<T, 6, 6>::Identity();
                     SH -= lambda0 * (vec_T0 * vec_T0.transpose());
@@ -681,7 +684,7 @@ void Compute_Smock_Membrane_Hessian(
 
                     hessian = pF_ipX.transpose() * SH * pF_ipX;
 
-                    hessian *= 0.5 * h * h * vol;
+                    hessian *= 0.5 * h * h * vol * mu;
                 }
 
 
@@ -788,6 +791,104 @@ void Compute_Smock_Membrane_Hessian(
     }
 }
 
+template <class T, int dim>
+void Check_Smock_Membrane_Gradient(
+    MESH_ELEM<dim - 1>& Elem_smock, 
+    MESH_NODE<T, dim>& X, // mid-surface node coordinates
+    MESH_NODE_ATTR<T, dim>& nodeAttr,
+    MESH_ELEM_ATTR<T, dim - 1>& elemAttr_smock,
+    FIXED_COROTATED<T, dim - 1>& elasticityAttr_smock)
+{
+    T eps = 1.0e-6;
+
+    T E0 = 0;
+    MESH_ELEM<dim - 1> Elem;
+    MESH_ELEM_ATTR<T, dim - 1> elemAttr;
+    FIXED_COROTATED<T, dim - 1> elasticityAttr;
+
+    Compute_Smock_Membrane_Energy(Elem, Elem_smock, 1.0, std::vector<bool>(X.size, false), X, nodeAttr, elemAttr, elemAttr_smock,  elasticityAttr, elasticityAttr_smock, E0); 
+    nodeAttr.template Fill<FIELDS<MESH_NODE_ATTR<T, dim>>::g>(VECTOR<T, dim>(0));
+    Compute_Smock_Membrane_Gradient(Elem, Elem_smock, 1.0, std::vector<bool>(X.size, false), X, nodeAttr, elemAttr, elemAttr_smock,  elasticityAttr, elasticityAttr_smock); 
+
+    std::vector<T> grad_FD(X.size * dim);
+    for (int i = 0; i < X.size * dim; ++i) {
+        MESH_NODE<T, dim> Xperturb;
+        Append_Attribute(X, Xperturb);
+        std::get<0>(Xperturb.Get_Unchecked(i / dim))[i % dim] += eps;
+        
+        T E = 0;
+        Compute_Smock_Membrane_Energy(Elem, Elem_smock, 1.0, std::vector<bool>(X.size, false), X, nodeAttr, elemAttr, elemAttr_smock,  elasticityAttr, elasticityAttr_smock, E0); 
+        grad_FD[i] = (E - E0) / eps;
+    }
+
+    T err = 0.0, norm = 0.0;
+    nodeAttr.Each([&](int id, auto data) {
+        auto &[x0, v, g, m] = data;
+
+        err += std::pow(grad_FD[id * dim] - g[0], 2);
+        err += std::pow(grad_FD[id * dim + 1] - g[1], 2);
+
+        norm += std::pow(grad_FD[id * dim], 2);
+        norm += std::pow(grad_FD[id * dim + 1], 2);
+
+        if constexpr (dim == 3) {
+            err += std::pow(grad_FD[id * dim + 2] - g[2], 2);
+            norm += std::pow(grad_FD[id * dim + 2], 2);
+        }
+    });
+    printf("Grad: err_abs = %le, sqnorm_FD = %le, err_rel = %le\n", err, norm, err / norm);
+}
+
+template <class T, int dim>
+void Check_Smock_Membrane_Hessian(
+    MESH_ELEM<dim - 1>& Elem_smock,
+    MESH_NODE<T, dim>& X, // mid-surface node coordinates
+    MESH_NODE_ATTR<T, dim>& nodeAttr,
+    MESH_ELEM_ATTR<T, dim - 1>& elemAttr_smock,
+    FIXED_COROTATED<T, dim - 1>& elasticityAttr_smock)
+{
+    T eps = 1.0e-6;
+    MESH_ELEM<dim - 1> Elem;
+    MESH_ELEM_ATTR<T, dim - 1> elemAttr;
+    FIXED_COROTATED<T, dim - 1> elasticityAttr;
+
+    MESH_NODE_ATTR<T, dim> nodeAttr0;
+    nodeAttr.deep_copy_to(nodeAttr0);
+    nodeAttr0.template Fill<FIELDS<MESH_NODE_ATTR<T, dim>>::g>(VECTOR<T, dim>(0));
+    Compute_Smock_Membrane_Gradient(Elem, Elem_smock, 1.0, std::vector<bool>(X.size, false), X, nodeAttr0, elemAttr, elemAttr_smock,  elasticityAttr, elasticityAttr_smock); 
+    std::vector<Eigen::Triplet<T>> HStriplets;
+    Compute_Smock_Membrane_Hessian(Elem, Elem_smock, 1.0, false, std::vector<bool>(X.size, false), X, nodeAttr, elemAttr, elemAttr_smock,  elasticityAttr, elasticityAttr_smock, HStriplets); 
+    CSR_MATRIX<T> HS;
+    HS.Construct_From_Triplet(X.size * dim, X.size * dim, HStriplets);
+
+    std::vector<Eigen::Triplet<T>> HFDtriplets;
+    HFDtriplets.reserve(HStriplets.size());
+    for (int i = 0; i < X.size * dim; ++i) {
+        MESH_NODE<T, dim> Xperturb;
+        Append_Attribute(X, Xperturb);
+        std::get<0>(Xperturb.Get_Unchecked(i / dim))[i % dim] += eps;
+        
+        nodeAttr.template Fill<FIELDS<MESH_NODE_ATTR<T, dim>>::g>(VECTOR<T, dim>(0));
+        Compute_Smock_Membrane_Gradient(Elem, Elem_smock, 1.0, std::vector<bool>(X.size, false), Xperturb, nodeAttr, elemAttr, elemAttr_smock,  elasticityAttr, elasticityAttr_smock); 
+        for (int vI = 0; vI < X.size; ++vI) {
+            const VECTOR<T, dim>& g = std::get<FIELDS<MESH_NODE_ATTR<T, dim>>::g>(nodeAttr.Get_Unchecked(vI));
+            const VECTOR<T, dim>& g0 = std::get<FIELDS<MESH_NODE_ATTR<T, dim>>::g>(nodeAttr0.Get_Unchecked(vI));
+            const VECTOR<T, dim> hFD = (g - g0) / eps;
+            if (hFD.length2() > eps) {
+                HFDtriplets.emplace_back(i, vI * dim, hFD[0]);
+                HFDtriplets.emplace_back(i, vI * dim + 1, hFD[1]);
+                if constexpr (dim == 3) {
+                    HFDtriplets.emplace_back(i, vI * dim + 2, hFD[2]);
+                }
+            }
+        }
+    }
+    CSR_MATRIX<T> HFD;
+    HFD.Construct_From_Triplet(X.size * dim, X.size * dim, HFDtriplets);
+
+    T err = (HS.Get_Matrix() - HFD.Get_Matrix()).squaredNorm(), norm = HFD.Get_Matrix().squaredNorm();
+    printf("Hessian: err_abs = %le, sqnorm_FD = %le, err_rel = %le\n", err, norm, err / norm);
+}
 
 
 }
