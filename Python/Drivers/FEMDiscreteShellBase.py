@@ -40,6 +40,8 @@ class FEMDiscreteShellBase(SimulationBase):
         self.edge2tri = StdMapPairiToi()
         self.edgeStencil = StdVectorVector4i()
         self.edgeInfo = StdVectorVector3d()
+        self.edgeStencil_smock = StdVectorVector4i()
+        self.edgeInfo_smock = StdVectorVector3d()
         self.thickness = 0 #TODO different thickness
         self.bendingStiffMult = 1
         self.fiberStiffMult = Vector4d(0, 0, 0, 0)
@@ -167,6 +169,7 @@ class FEMDiscreteShellBase(SimulationBase):
         self.use_dist = False
         self.use_populate = False
         self.use_ARAP = False
+        self.alignmult = 1.0
 
         # progressive smocking
         self.progressive = False
@@ -225,12 +228,12 @@ class FEMDiscreteShellBase(SimulationBase):
         if stitch:
             FEM.smock.Populate_pattern(self.X, self.stitchInfo, self.stitchRatio, self.Smock_pattern, start_idx, end_idx, stage_start, stage_size, scale, x_axis, y_axis)
         else:
-            FEM.smock.Populate_pattern_hinge(self.X, self.rodHinge, self.rodHingeInfo, self.Smock_pattern, start_idx, end_idx, stage_start, stage_size, scale, x_axis, y_axis, self.cloth_Ebase_iso[0] * 750.0, 0.005)
+            FEM.smock.Populate_pattern_hinge(self.X, self.rodHinge, self.rodHingeInfo, self.Smock_pattern, start_idx, end_idx, stage_start, stage_size, scale, x_axis, y_axis, self.cloth_Ebase_iso[0] * 600.0, 0.005)
         
         if load:
-            FEM.smock.Populate_coarse_graph(self.X, self.X_load, self.Elem_smock_unmapped, start_idx, end_idx, stage_start, stage_size, scale, x_axis, y_axis, self.edgeStencil, self.edgeInfo)
+            FEM.smock.Populate_coarse_graph(self.X, self.X_load, self.Elem_smock_unmapped, start_idx, end_idx, stage_start, stage_size, scale, x_axis, y_axis, self.edgeStencil_smock, self.edgeInfo_smock, self.alignmult)
         else:    
-            FEM.smock.Populate_coarse_graph(self.X, self.X, self.Elem_smock_unmapped, start_idx, end_idx, stage_start, stage_size, scale, x_axis, y_axis, self.edgeStencil, self.edgeInfo)
+            FEM.smock.Populate_coarse_graph(self.X, self.X, self.Elem_smock_unmapped, start_idx, end_idx, stage_start, stage_size, scale, x_axis, y_axis, self.edgeStencil_smock, self.edgeInfo_smock, self.alignmult)
 
     def add_mannequin(self, filePath, translate, scale, rotCenter, rotAxis, rotDeg):
         meshCounter = FEM.DiscreteShell.Add_Shell(filePath, translate, scale, rotCenter, rotAxis, rotDeg, self.X, self.Elem, self.compNodeRange)
@@ -460,7 +463,7 @@ class FEMDiscreteShellBase(SimulationBase):
             elif self.smock:
                 print("Doing smocking constraint!")
                 self.PNIterCount = self.PNIterCount + FEM.DiscreteShell.Advance_One_Step_IE_Hinge_EIPC_Smock(self.Elem, self.segs, self.DBC, \
-                    self.edge2tri, self.edgeStencil, self.edgeInfo, \
+                    self.edge2tri, self.edgeStencil, self.edgeInfo,self.edgeStencil_smock, self.edgeInfo_smock, \
                     self.thickness, self.bendingStiffMult, self.fiberStiffMult, self.inextLimit, self.s, self.sHat, self.kappa_s, \
                     self.bodyForce, self.dt, self.PNTol, self.withCollision, self.dHat2, self.kappa, self.mu, self.epsv2, self.fricIterAmt, \
                     self.compNodeRange, self.muComp, self.staticSolve, self.X0,\
@@ -504,14 +507,14 @@ class FEMDiscreteShellBase(SimulationBase):
                 
                 elif self.smock:
                     self.PNIterCount = self.PNIterCount + FEM.DiscreteShell.Advance_One_Step_IE_Hinge_smock(self.Elem, self.segs, self.DBC, \
-                        self.edge2tri, self.edgeStencil, self.edgeInfo, \
+                        self.edge2tri, self.edgeStencil, self.edgeInfo, self.edgeStencil_smock, self.edgeInfo_smock,\
                         self.thickness, self.bendingStiffMult, self.fiberStiffMult, self.inextLimit, self.s, self.sHat, self.kappa_s, \
                         self.bodyForce, self.dt, self.PNTol, self.withCollision, self.dHat2, self.kappa, self.mu, self.epsv2, self.fricIterAmt, \
                         self.compNodeRange, self.muComp, self.staticSolve, \
                         self.X0, self.X, self.nodeAttr, self.massMatrix, self.elemAttr, self.elasticity, \
                         self.tet, self.tetAttr, self.tetElasticity, self.rod, self.rodInfo, \
                         self.rodHinge, self.rodHingeInfo, self.stitchInfo,self.pinInfo, self.stitchRatio, self.k_stitch, self.k_pin,\
-                        self.discrete_particle, self.output_folder, self.Elem_smock, self.elemAttr_smock, self.elasticity_smock, self.smock)
+                        self.discrete_particle, self.output_folder, self.Elem_smock, self.elemAttr_smock, self.elasticity_smock, self.current_frame, self.smock)
                 
                 else:
                     self.PNIterCount = self.PNIterCount + FEM.DiscreteShell.Advance_One_Step_IE_Hinge(self.Elem, self.segs, self.DBC, \

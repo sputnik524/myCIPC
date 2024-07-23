@@ -159,6 +159,8 @@ bool Compute_IncPotential(
     const std::map<std::pair<int, int>, int>& edge2tri,
     const std::vector<VECTOR<int, 4>>& edgeStencil,
     const std::vector<VECTOR<T, 3>>& edgeInfo,
+    const std::vector<VECTOR<int, 4>>& edgeStencil_smock,
+    const std::vector<VECTOR<T, 3>>& edgeInfo_smock,
     const T thickness, T bendingStiffMult,
     const VECTOR<T, 4>& fiberStiffMult,
     const VECTOR<T, 3>& fiberLimit,
@@ -243,6 +245,8 @@ bool Compute_IncPotential(
         }
         if (bendingStiffMult) {
             Compute_Bending_Energy<T, dim, KL>(Elem, staticSolve ? 1.0 : h, edge2tri, edgeStencil, edgeInfo, thickness, bendingStiffMult, DBCb, X, nodeAttr, elemAttr, elasticityAttr, value);
+            std::cout << "Size of the smock stencil Info: " << edgeStencil_smock.size() << std::endl;
+            Compute_Bending_Energy<T, dim, KL>(Elem, staticSolve ? 1.0 : h, edge2tri, edgeStencil_smock, edgeInfo_smock, thickness, bendingStiffMult, DBCb, X, nodeAttr, elemAttr, elasticityAttr, value);
         }
         
         // volumetric elasticity
@@ -442,6 +446,8 @@ void Compute_IncPotential_Gradient(
     const std::map<std::pair<int, int>, int>& edge2tri,
     const std::vector<VECTOR<int, 4>>& edgeStencil,
     const std::vector<VECTOR<T, 3>>& edgeInfo,
+    const std::vector<VECTOR<int, 4>>& edgeStencil_smock,
+    const std::vector<VECTOR<T, 3>>& edgeInfo_smock,
     const T thickness, T bendingStiffMult,
     const VECTOR<T, 4>& fiberStiffMult,
     const VECTOR<T, 3>& fiberLimit,
@@ -516,6 +522,7 @@ void Compute_IncPotential_Gradient(
         }
         if (bendingStiffMult) {
             Compute_Bending_Gradient<T, dim, KL>(Elem, staticSolve ? 1.0 : h, edge2tri, edgeStencil, edgeInfo, thickness, bendingStiffMult, DBCb, X, nodeAttr, elemAttr, elasticityAttr);
+            Compute_Bending_Gradient<T, dim, KL>(Elem, staticSolve ? 1.0 : h, edge2tri, edgeStencil_smock, edgeInfo_smock, thickness, bendingStiffMult, DBCb, X, nodeAttr, elemAttr, elasticityAttr);
         }
 
         // volumetric elasticity
@@ -700,6 +707,8 @@ void Compute_IncPotential_Hessian(
     const std::map<std::pair<int, int>, int>& edge2tri,
     const std::vector<VECTOR<int, 4>>& edgeStencil,
     const std::vector<VECTOR<T, 3>>& edgeInfo,
+    const std::vector<VECTOR<int, 4>>& edgeStencil_smock,
+    const std::vector<VECTOR<T, 3>>& edgeInfo_smock,
     const T thickness, T bendingStiffMult,
     const VECTOR<T, 4>& fiberStiffMult,
     const VECTOR<T, 3>& fiberLimit,
@@ -778,6 +787,7 @@ void Compute_IncPotential_Hessian(
         }
         if (bendingStiffMult) {
             Compute_Bending_Hessian<T, dim, KL>(Elem, staticSolve ? 1.0 : h, projectSPD, edge2tri, edgeStencil, edgeInfo, thickness, bendingStiffMult, DBCb, X, nodeAttr, elemAttr, elasticityAttr, triplets);
+            Compute_Bending_Hessian<T, dim, KL>(Elem, staticSolve ? 1.0 : h, projectSPD, edge2tri, edgeStencil_smock, edgeInfo_smock, thickness, bendingStiffMult, DBCb, X, nodeAttr, elemAttr, elasticityAttr, triplets);
         }
         
         // volumetric elasticity:

@@ -248,7 +248,7 @@ void populate_coarse_graph(MESH_NODE<T, dim>& X_0, MESH_NODE<T, dim>& X_load, ME
     int start_idx, int end_idx, 
     int stage_start, int stage_size, 
     T scale, VECTOR<T, 3>& x_axis, VECTOR<T, 3>& y_axis, std::vector<VECTOR<int, 4>>& edgeStencil,
-    std::vector<VECTOR<T, 3>>& edgeInfo)
+    std::vector<VECTOR<T, 3>>& edgeInfo, T alignmult)
 {
     x_axis = x_axis.Normalized();
     y_axis = y_axis.Normalized();
@@ -307,7 +307,7 @@ void populate_coarse_graph(MESH_NODE<T, dim>& X_0, MESH_NODE<T, dim>& X_load, ME
         }
     }
     std::cout << "The size of the graph elements are: " << graph_Elem.size << std::endl;
-    add_underlay_edges(X_load, graph_Elem, underlay_idx, edgeStencil, edgeInfo, x_units);
+    add_underlay_edges(X_load, graph_Elem, underlay_idx, edgeStencil, edgeInfo, x_units, alignmult);
     
 }
 

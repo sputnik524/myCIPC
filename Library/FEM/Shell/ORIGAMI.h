@@ -4,7 +4,7 @@ namespace JGSL {
 
 template <class T, int dim = 3>
 void add_underlay_edges(MESH_NODE<T, dim>& X, MESH_ELEM<dim - 1>& graph_Elem, const std::vector<int>& underlay_idx,
-    std::vector<VECTOR<int ,4>>& edgeStencil, std::vector<VECTOR<T, 3>>& edgeInfo, int x_units)
+    std::vector<VECTOR<int ,4>>& edgeStencil, std::vector<VECTOR<T, 3>>& edgeInfo, int x_units, T alignmult)
 {   
     std::cout << "Underlay size: " << underlay_idx.size() << std::endl;
     for(int i = 0; i < underlay_idx.size() - x_units; i++){
@@ -48,7 +48,7 @@ void add_underlay_edges(MESH_NODE<T, dim>& X, MESH_ELEM<dim - 1>& graph_Elem, co
             VECTOR<T, 3> n1 = cross(X1 - X0, X2 - X0);
             VECTOR<T, 3> n2 = cross(X2 - X3, X1 - X3);
             edgeInfo.back()[2] = (n1.length() + n2.length()) / (edgeInfo.back()[1] * 6); 
-            edgeInfo.back()[1] *= 20.0;
+            edgeInfo.back()[1] *= alignmult;
         }
     }
     std::cout << edgeStencil.size() << "Added smocking hinges" << std::endl;
