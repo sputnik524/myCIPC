@@ -41,17 +41,18 @@ if __name__ == "__main__":
     sim.dt = 0.003
     sim.frame_dt = 0.003
     sim.frame_num = 10
+    sim.k_stitch = 10000
     sim.use_s2 = True
     sim.use_dist = True
     sim.use_populate = True
     sim.gravity = Vector3d(0, 0.0, 0) 
     sim.staticSolve = solve_static
     sim.smock = True
-    sim.smock_cons = 30.0
+    sim.smock_cons = 10.0
     sim.uniform_stitching_ratio_smock = 1.0
     sim.withCollision = True
-    sim.use_ARAP = True
-    sim.alignmult = 5.0
+    sim.use_ARAP = False
+    sim.alignmult = 10.0
 
     # stage_size = 16900
     # stage_start = 0
@@ -59,7 +60,7 @@ if __name__ == "__main__":
     # end = 16899
     # scale_pop = 1.0 * scale
 
-    sim.load_frame("input/braid_big/shell1.obj", True)
+    # sim.load_frame("input/braid_big/shell1.obj", True)
 
     stage_size = 62500
     stage_start = 0
@@ -67,7 +68,7 @@ if __name__ == "__main__":
     end = 62500 - 20
     scale_pop = 1.0 * scale
 
-    sim.populate(start, end, stage_start, stage_size, scale_pop, load = True, y_axis = Vector3d(0.0, -1.0, 0.0))
+    sim.populate(start, end, stage_start, stage_size, scale_pop, stitch = True, y_axis = Vector3d(0.0, -1.0, 0.0))
 
     # if(solve_static):
     #     sim.dt = 1.0
@@ -83,10 +84,8 @@ if __name__ == "__main__":
     sim.bendingStiffMult = bendEMult / membEMult
     sim.kappa_s = Vector2d(0, 0)
     
-    offset_vec = 0.02
+    offset_vec = 0.01
     sim.Offset_stitching(offset_vec)
-
-    # sim.load_frame("input/braid_big/shell1.obj") 
 
     sim.initialize_OIPC(1e-3, 0)
 

@@ -45,7 +45,7 @@ void compute_pFpX(const Eigen::Matrix2d& Dm_iInv, Eigen::Matrix<T, 6, 9>& pF_ipX
     pF_ipX(5,8) = b11;
 }
 
-template<class T, int dim, bool useNH = true, bool useARAP = true>
+template<class T, int dim, bool useNH = true, bool useARAP = false>
 void Compute_Smock_Membrane_Energy(
     MESH_ELEM<dim - 1>& Elem, MESH_ELEM<dim - 1>& Elem_smock, T h,
     const std::vector<bool>& DBCb,
@@ -188,7 +188,7 @@ void Compute_Smock_Membrane_Energy(
     }
 }
 
-template<class T, int dim, bool useNH = true, bool useARAP = true>
+template<class T, int dim, bool useNH = true, bool useARAP = false>
 void Compute_Smock_Membrane_Gradient(
     MESH_ELEM<dim - 1>& Elem, MESH_ELEM<dim - 1>& Elem_smock, T h,
     const std::vector<bool>& DBCb,
@@ -376,7 +376,7 @@ void Compute_Smock_Membrane_Gradient(
     }
 }
 
-template<class T, int dim, bool useNH = true, bool useARAP = true>
+template<class T, int dim, bool useNH = true, bool useARAP = false>
 void Compute_Smock_Membrane_Hessian(
     MESH_ELEM<dim - 1>& Elem, 
     MESH_ELEM<dim - 1>& Elem_smock, 
